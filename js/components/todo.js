@@ -1,33 +1,48 @@
 /* =================================================================
-   TODO + 메모 컴포넌트
+   TODO + 메모 컴포넌트 (localStorage 우선 저장)
    ================================================================= */
+
+const TODO_STORAGE_KEY = 'dashboard_todos';
+const MEMO_STORAGE_KEY = 'dashboard_memo';
 
 let todos = [];
 
 async function loadTodos() {
+  /* 1) 이미 저장된 할 일이 있으면 시트로 덮어쓰지 않음 */
+  try {
+    const raw = localStorage.getItem(TODO_STORAGE_KEY);
+    if (raw !== null) {
+      todos = JSON.parse(raw);
+      if (!Array.isArray(todos)) todos = [];
+      renderTodos();
+      return;
+    }
+  } catch { todos = []; }
+
+  /* 2) 최초 실행: 시트에 데이터가 있으면 가져와 로컬에 한 번 저장 */
   const rows = await fetchSheetData(CONFIG.SHEETS.TODO);
-  if (!rows) { loadTodosLocal(); return; }
-  todos = rows.slice(1).map((r, i) => ({
-    id: i, text: r[0] || '', done: (r[1] || '').toUpperCase() === 'TRUE',
-  })).filter(t => t.text.trim());
+  if (rows && rows.length > 1) {
+    todos = rows.slice(1).map((r, i) => ({
+      id: i, text: r[0] || '', done: (r[1] || '').toUpperCase() === 'TRUE',
+    })).filter(t => t.text.trim());
+  } else {
+    todos = [];
+  }
   renderTodos();
   saveTodosLocal();
 }
 
 function loadTodosLocal() {
   try {
-    const s = localStorage.getItem('dashboard_todos');
-    todos = s ? JSON.parse(s) : [
-      { id: 0, text: '수업 자료 준비', done: false },
-      { id: 1, text: '학부모 상담 일지 작성', done: true },
-      { id: 2, text: '생활기록부 입력', done: false },
-    ];
+    const s = localStorage.getItem(TODO_STORAGE_KEY);
+    todos = s ? JSON.parse(s) : [];
+    if (!Array.isArray(todos)) todos = [];
   } catch { todos = []; }
   renderTodos();
 }
 
 function saveTodosLocal() {
-  localStorage.setItem('dashboard_todos', JSON.stringify(todos));
+  localStorage.setItem(TODO_STORAGE_KEY, JSON.stringify(todos));
 }
 
 function renderTodos() {
@@ -39,9 +54,15 @@ function renderTodos() {
   list.innerHTML = todos.map(t => `
     <li class="todo-item" data-id="${t.id}">
       <div class="todo-checkbox${t.done ? ' checked' : ''}" onclick="toggleTodo(${t.id})"></div>
-      <span class="todo-text${t.done ? ' completed' : ''}">${t.text}</span>
+      <span class="todo-text${t.done ? ' completed' : ''}">${escapeTodoHtml(t.text)}</span>
       <button class="todo-delete" onclick="deleteTodo(${t.id})" title="삭제"><i class="fas fa-times"></i></button>
     </li>`).join('');
+}
+
+function escapeTodoHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 function toggleTodo(id) {
@@ -88,25 +109,38 @@ function initTodoInput() {
    ================================================================= */
 
 async function loadMemo() {
+  const ta = document.getElementById('memo-textarea');
+
+  /* 1) 한 번이라도 저장된 적이 있으면(localStorage 키 존재) 시트로 덮어쓰지 않음 */
+  try {
+    if (localStorage.getItem(MEMO_STORAGE_KEY) !== null) {
+      ta.value = localStorage.getItem(MEMO_STORAGE_KEY);
+      return;
+    }
+  } catch { /* ignore */ }
+
+  /* 2) 최초 실행: 시트에서 불러와 로컬에 저장 */
   const rows = await fetchSheetData(CONFIG.SHEETS.MEMO);
   if (rows && rows.length > 0) {
-    document.getElementById('memo-textarea').value = rows.map(r => r.join('\t')).join('\n');
-    saveMemoLocal();
-  } else { loadMemoLocal(); }
-}
-
-function loadMemoLocal() {
-  const s = localStorage.getItem('dashboard_memo');
-  if (s) document.getElementById('memo-textarea').value = s;
+    ta.value = rows.map(r => r.join('\t')).join('\n');
+  } else {
+    ta.value = '';
+  }
+  saveMemoLocal();
 }
 
 function saveMemoLocal() {
-  localStorage.setItem('dashboard_memo', document.getElementById('memo-textarea').value);
+  localStorage.setItem(MEMO_STORAGE_KEY, document.getElementById('memo-textarea').value);
 }
 
 function initMemo() {
   let t;
-  document.getElementById('memo-textarea').addEventListener('input', () => {
+  const ta = document.getElementById('memo-textarea');
+  ta.addEventListener('input', () => {
     clearTimeout(t); t = setTimeout(saveMemoLocal, 500);
+  });
+  ta.addEventListener('blur', saveMemoLocal);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') saveMemoLocal();
   });
 }
