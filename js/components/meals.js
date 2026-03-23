@@ -3,6 +3,8 @@
    ================================================================= */
 
 const MEAL_STORAGE_KEY = 'dashboard_school_info';
+const MEAL_TYPE_STORAGE_KEY = 'dashboard_meal_type';
+const MEAL_TYPES = ['조식', '중식', '석식'];
 
 function loadSavedSchool() {
   try {
@@ -106,6 +108,41 @@ function initSchoolSearch() {
 
   btn.addEventListener('click', doSearch);
   input.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+  initMealTypeTabs();
+}
+
+function getMealType() {
+  try {
+    const saved = localStorage.getItem(MEAL_TYPE_STORAGE_KEY);
+    if (saved && MEAL_TYPES.includes(saved)) return saved;
+  } catch { /* ignore */ }
+  return '중식';
+}
+
+function setMealType(type) {
+  if (!MEAL_TYPES.includes(type)) return;
+  localStorage.setItem(MEAL_TYPE_STORAGE_KEY, type);
+}
+
+function syncMealTypeUI() {
+  const t = getMealType();
+  document.querySelectorAll('.meal-type-tab').forEach(btn => {
+    const active = btn.dataset.meal === t;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+}
+
+function initMealTypeTabs() {
+  syncMealTypeUI();
+  document.querySelectorAll('.meal-type-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setMealType(btn.dataset.meal);
+      syncMealTypeUI();
+      loadLunch();
+    });
+  });
 }
 
 /* =================================================================
@@ -159,8 +196,15 @@ function parseMealMenu(rawMenu) {
     .filter(Boolean);
 }
 
+function findMealRow(rows, mealType) {
+  const exact = rows.find(r => r.MMEAL_SC_NM === mealType);
+  if (exact) return exact;
+  return rows.find(r => r.MMEAL_SC_NM && r.MMEAL_SC_NM.includes(mealType));
+}
+
 async function loadLunch() {
   try {
+    const mealType = getMealType();
     const todayStr = dateToStr(getNow());
     const data = await fetchMealData(todayStr);
 
@@ -170,9 +214,15 @@ async function loadLunch() {
       return;
     }
 
-    const lunchRow = mealInfo[1].row.find(r => r.MMEAL_SC_NM === '중식') || mealInfo[1].row[0];
-    const menuItems = parseMealMenu(lunchRow.DDISH_NM);
-    renderLunch(menuItems.length ? menuItems : ['오늘의 급식 정보가 없습니다']);
+    const rows = mealInfo[1].row;
+    const mealRow = findMealRow(rows, mealType);
+    if (!mealRow || !mealRow.DDISH_NM) {
+      renderLunch([`오늘 ${mealType} 메뉴 정보가 없습니다`]);
+      return;
+    }
+
+    const menuItems = parseMealMenu(mealRow.DDISH_NM);
+    renderLunch(menuItems.length ? menuItems : [`${mealType} 메뉴 정보가 없습니다`]);
   } catch (err) {
     console.warn('[급식 로딩 실패]', err.message);
     renderLunch(['급식 정보를 불러올 수 없습니다']);

@@ -15,10 +15,6 @@ function updateClock() {
     `${y}년 ${m}월 ${d}일 ${DAY_NAMES_KR[now.getDay()]}요일`;
 }
 
-function updateDayBadge() {
-  const badge = document.getElementById('today-day');
-  if (badge) badge.textContent = DAY_NAMES_KR[getDayIndex()] + '요일';
-}
 
 /* =================================================================
    D-Day 관리
@@ -443,7 +439,7 @@ async function loadAllData() {
 document.addEventListener('DOMContentLoaded', () => {
   updateClock();
   setInterval(updateClock, 1000);
-  updateDayBadge();
+  initTimetableDayTabs();
 
   loadDDays();
   initCalendarStrip();

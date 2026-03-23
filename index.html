@@ -48,6 +48,13 @@
             <span class="badge" id="today-day"></span>
           </div>
           <div class="card-body">
+            <div class="timetable-day-tabs" id="timetable-day-tabs" role="tablist" aria-label="요일별 시간표">
+              <button type="button" class="timetable-day-tab" data-day="1" role="tab">월</button>
+              <button type="button" class="timetable-day-tab" data-day="2" role="tab">화</button>
+              <button type="button" class="timetable-day-tab" data-day="3" role="tab">수</button>
+              <button type="button" class="timetable-day-tab" data-day="4" role="tab">목</button>
+              <button type="button" class="timetable-day-tab" data-day="5" role="tab">금</button>
+            </div>
             <ul class="timetable-list" id="timetable-list">
               <li class="timetable-item skeleton"><span class="period">1</span><span class="subject">불러오는 중...</span></li>
             </ul>
@@ -63,6 +70,11 @@
             <div class="school-search" id="school-search">
               <input type="text" id="school-name-input" placeholder="학교 이름 검색..." spellcheck="false">
               <button id="school-search-btn"><i class="fas fa-search"></i></button>
+            </div>
+            <div class="meal-type-tabs" id="meal-type-tabs" role="tablist" aria-label="급식 구분">
+              <button type="button" class="meal-type-tab" data-meal="조식" role="tab">조식</button>
+              <button type="button" class="meal-type-tab active" data-meal="중식" role="tab" aria-selected="true">중식</button>
+              <button type="button" class="meal-type-tab" data-meal="석식" role="tab">석식</button>
             </div>
             <div class="school-current" id="school-current"></div>
             <ul class="lunch-list" id="lunch-list">
