@@ -25,7 +25,8 @@ const CONFIG = {
     SD_SCHUL_CODE: null,              // 자동 조회됨
   },
 
-  REFRESH_INTERVAL: 5 * 60 * 1000,
+  // 반복 갱신 제거됨 — 시간표·급식은 페이지 로드 시 1회만 호출
+  REFRESH_INTERVAL: 0,
 
   PERIOD_TIMES: [
     { start: '08:40', end: '09:30' },

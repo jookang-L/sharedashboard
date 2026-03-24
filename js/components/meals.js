@@ -140,14 +140,17 @@ function initMealTypeTabs() {
     btn.addEventListener('click', () => {
       setMealType(btn.dataset.meal);
       syncMealTypeUI();
-      loadLunch();
+      renderFromCache();
     });
   });
 }
 
 /* =================================================================
-   급식 데이터 조회
+   급식 데이터 조회 (하루 한 번 호출, 캐싱)
    ================================================================= */
+
+let mealCache = null;
+let mealCacheDate = null;
 
 async function lookupSchoolCode() {
   if (CONFIG.NEIS.SD_SCHUL_CODE) return CONFIG.NEIS.SD_SCHUL_CODE;
@@ -202,27 +205,39 @@ function findMealRow(rows, mealType) {
   return rows.find(r => r.MMEAL_SC_NM && r.MMEAL_SC_NM.includes(mealType));
 }
 
+function renderFromCache() {
+  const mealType = getMealType();
+  if (!mealCache || !mealCache.length) {
+    renderLunch([`오늘 ${mealType} 메뉴 정보가 없습니다`]);
+    return;
+  }
+  const mealRow = findMealRow(mealCache, mealType);
+  if (!mealRow || !mealRow.DDISH_NM) {
+    renderLunch([`오늘 ${mealType} 메뉴 정보가 없습니다`]);
+    return;
+  }
+  const menuItems = parseMealMenu(mealRow.DDISH_NM);
+  renderLunch(menuItems.length ? menuItems : [`${mealType} 메뉴 정보가 없습니다`]);
+}
+
 async function loadLunch() {
+  const todayStr = dateToStr(getNow());
+
+  if (mealCache && mealCacheDate === todayStr) {
+    renderFromCache();
+    return;
+  }
+
   try {
-    const mealType = getMealType();
-    const todayStr = dateToStr(getNow());
     const data = await fetchMealData(todayStr);
-
     const mealInfo = data?.mealServiceDietInfo;
-    if (!mealInfo || !mealInfo[1]?.row?.length) {
-      renderLunch(['오늘의 급식 정보가 없습니다']);
-      return;
+    if (mealInfo && mealInfo[1]?.row?.length) {
+      mealCache = mealInfo[1].row;
+    } else {
+      mealCache = [];
     }
-
-    const rows = mealInfo[1].row;
-    const mealRow = findMealRow(rows, mealType);
-    if (!mealRow || !mealRow.DDISH_NM) {
-      renderLunch([`오늘 ${mealType} 메뉴 정보가 없습니다`]);
-      return;
-    }
-
-    const menuItems = parseMealMenu(mealRow.DDISH_NM);
-    renderLunch(menuItems.length ? menuItems : [`${mealType} 메뉴 정보가 없습니다`]);
+    mealCacheDate = todayStr;
+    renderFromCache();
   } catch (err) {
     console.warn('[급식 로딩 실패]', err.message);
     renderLunch(['급식 정보를 불러올 수 없습니다']);

@@ -2,8 +2,48 @@
    시간표 컴포넌트
    ================================================================= */
 
-/** null이면 항상 '오늘 요일(평일)' 기준, 숫자면 사용자가 탭으로 고른 요일 */
+const TT_OVERRIDE_KEY = 'dashboard_timetable_overrides';
 let timetableViewDayOverride = null;
+let sheetTimetableCache = null;
+let timetableLoaded = false;
+
+/* --- 로컬 오버라이드 (임시 추가/삭제) --- */
+
+function loadTTOverrides() {
+  try {
+    const raw = localStorage.getItem(TT_OVERRIDE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+function saveTTOverrides(ov) {
+  localStorage.setItem(TT_OVERRIDE_KEY, JSON.stringify(ov));
+}
+
+/** key: "요일번호-교시" ex: "1-3" = 월요일 3교시 */
+function overrideKey(dayIdx, period) {
+  return `${dayIdx}-${period}`;
+}
+
+function setTTOverride(dayIdx, period, subject) {
+  const ov = loadTTOverrides();
+  ov[overrideKey(dayIdx, period)] = subject;
+  saveTTOverrides(ov);
+}
+
+function removeTTOverride(dayIdx, period) {
+  const ov = loadTTOverrides();
+  delete ov[overrideKey(dayIdx, period)];
+  saveTTOverrides(ov);
+}
+
+function getTTOverride(dayIdx, period) {
+  const ov = loadTTOverrides();
+  const k = overrideKey(dayIdx, period);
+  return k in ov ? ov[k] : undefined;
+}
+
+/* --- 요일 선택 --- */
 
 function getDefaultTimetableDayIndex() {
   const d = getDayIndex();
@@ -35,8 +75,7 @@ function syncTimetableDayUI() {
 function updateTimetableBadge() {
   const badge = document.getElementById('today-day');
   if (!badge) return;
-  const d = getTimetableDayIndex();
-  badge.textContent = DAY_NAMES_KR[d] + '요일';
+  badge.textContent = DAY_NAMES_KR[getTimetableDayIndex()] + '요일';
 }
 
 function initTimetableDayTabs() {
@@ -50,13 +89,19 @@ function initTimetableDayTabs() {
       setTimetableViewDay(day);
       syncTimetableDayUI();
       updateTimetableBadge();
-      loadTimetable();
+      renderTimetableForDay();
     });
   });
+  initTTContextMenu();
 }
 
+/* --- 시트에서 시간표 로드 (하루 한 번) --- */
+
 async function loadTimetable() {
-  const dayIdx = getTimetableDayIndex();
+  if (timetableLoaded && sheetTimetableCache) {
+    renderTimetableForDay();
+    return;
+  }
 
   const rows = await fetchSheetData(CONFIG.SHEETS.TIMETABLE);
   if (!rows || rows.length === 0) { renderTimetableFallback(); return; }
@@ -64,22 +109,14 @@ async function loadTimetable() {
   const headerRowIdx = rows.findIndex(r =>
     r.some(cell => cell && (String(cell).includes('교시') || String(cell).includes('시간')))
   );
-
   if (headerRowIdx < 0) { renderTimetableFallback(); return; }
 
-  // 시트 컬럼: A(0)=교시, B(1)=시간, C(2)=월, D(3)=화, E(4)=수, F(5)=목, G(6)=금
-  // dayIdx: 1=월→col2, 2=화→col3, … 5=금→col6
-  const colIndex = dayIdx + 1;
-
-  const periods = [];
+  sheetTimetableCache = {};
   for (let i = headerRowIdx + 1; i < rows.length; i++) {
     const row = rows[i];
     const periodLabel = (row[0] || '').trim();
     const timeStr = (row[1] || '').trim();
-    const subject = (row[colIndex] || '').trim();
-
     if (!periodLabel) continue;
-
     const periodNum = parseInt(periodLabel, 10) || (i - headerRowIdx);
 
     if (timeStr && timeStr.includes('~')) {
@@ -87,13 +124,36 @@ async function loadTimetable() {
       CONFIG.PERIOD_TIMES[periodNum - 1] = { start, end };
     }
 
-    periods.push({
-      period: periodNum,
-      subject: subject || '',
-      timeStr: timeStr
-    });
+    for (let d = 1; d <= 5; d++) {
+      const colIndex = d + 1;
+      const subject = (row[colIndex] || '').trim();
+      const key = overrideKey(d, periodNum);
+      if (!sheetTimetableCache[d]) sheetTimetableCache[d] = [];
+      sheetTimetableCache[d].push({ period: periodNum, subject, timeStr });
+    }
   }
 
+  timetableLoaded = true;
+  renderTimetableForDay();
+}
+
+function renderTimetableForDay() {
+  const dayIdx = getTimetableDayIndex();
+  const dayData = sheetTimetableCache ? sheetTimetableCache[dayIdx] : null;
+  if (!dayData || dayData.length === 0) {
+    renderTimetable([]);
+    return;
+  }
+
+  const periods = dayData.map(p => {
+    const ov = getTTOverride(dayIdx, p.period);
+    return {
+      period: p.period,
+      subject: ov !== undefined ? ov : p.subject,
+      timeStr: p.timeStr,
+      isOverride: ov !== undefined,
+    };
+  });
   renderTimetable(periods);
 }
 
@@ -125,9 +185,12 @@ function renderTimetable(periods) {
       ts = p.timeStr;
     }
 
-    const subjectText = p.subject || '<span style="color:var(--text-muted)">-</span>';
+    let subjectText = p.subject || '<span style="color:var(--text-muted)">-</span>';
+    if (p.isOverride && p.subject) {
+      subjectText = `<span style="color:var(--accent)">${p.subject}</span>`;
+    }
 
-    return `<li class="timetable-item${cur ? ' current' : ''}">
+    return `<li class="timetable-item${cur ? ' current' : ''}" data-period="${p.period}" data-day="${selectedDay}">
       <span class="period">${p.period}</span>
       <span class="subject">${subjectText}</span>
       <span class="time-range">${ts}</span>
@@ -139,6 +202,70 @@ function renderTimetableFallback() {
   document.getElementById('timetable-list').innerHTML =
     '<li class="timetable-item"><span class="subject" style="color:var(--text-muted)">시간표를 불러올 수 없습니다</span></li>';
 }
+
+/* --- 우클릭 컨텍스트 메뉴 --- */
+
+function initTTContextMenu() {
+  let menu = document.getElementById('tt-context-menu');
+  if (!menu) {
+    menu = document.createElement('div');
+    menu.id = 'tt-context-menu';
+    menu.className = 'tt-context-menu';
+    menu.style.display = 'none';
+    menu.innerHTML = `
+      <button class="tt-ctx-btn" data-action="edit"><i class="fas fa-pen"></i> 수업 변경</button>
+      <button class="tt-ctx-btn" data-action="clear"><i class="fas fa-eraser"></i> 비우기</button>
+      <button class="tt-ctx-btn" data-action="restore"><i class="fas fa-undo"></i> 원래대로</button>
+    `;
+    document.body.appendChild(menu);
+  }
+
+  let ctxDay = 0, ctxPeriod = 0;
+
+  document.getElementById('timetable-list').addEventListener('contextmenu', e => {
+    e.preventDefault();
+    const li = e.target.closest('.timetable-item[data-period]');
+    if (!li) return;
+
+    ctxDay = parseInt(li.dataset.day, 10);
+    ctxPeriod = parseInt(li.dataset.period, 10);
+
+    menu.style.display = 'block';
+    let x = e.clientX, y = e.clientY;
+    if (x + menu.offsetWidth > window.innerWidth) x = window.innerWidth - menu.offsetWidth - 8;
+    if (y + menu.offsetHeight > window.innerHeight) y = window.innerHeight - menu.offsetHeight - 8;
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+  });
+
+  menu.querySelector('[data-action="edit"]').addEventListener('click', () => {
+    menu.style.display = 'none';
+    const name = prompt('수업 이름을 입력하세요:');
+    if (name === null) return;
+    if (name.trim()) {
+      setTTOverride(ctxDay, ctxPeriod, name.trim());
+    }
+    renderTimetableForDay();
+  });
+
+  menu.querySelector('[data-action="clear"]').addEventListener('click', () => {
+    menu.style.display = 'none';
+    setTTOverride(ctxDay, ctxPeriod, '');
+    renderTimetableForDay();
+  });
+
+  menu.querySelector('[data-action="restore"]').addEventListener('click', () => {
+    menu.style.display = 'none';
+    removeTTOverride(ctxDay, ctxPeriod);
+    renderTimetableForDay();
+  });
+
+  document.addEventListener('click', e => {
+    if (!menu.contains(e.target)) menu.style.display = 'none';
+  });
+}
+
+/* --- 현재 교시 강조 --- */
 
 function updateCurrentPeriod() {
   const list = document.getElementById('timetable-list');

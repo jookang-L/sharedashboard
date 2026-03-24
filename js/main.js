@@ -482,7 +482,6 @@ document.addEventListener('DOMContentLoaded', () => {
   loadAllData();
 
   setInterval(updateCurrentPeriod, 60000);
-  setInterval(loadAllData, CONFIG.REFRESH_INTERVAL);
 });
 
 /* =================================================================

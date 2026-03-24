@@ -6,20 +6,27 @@ const TODO_STORAGE_KEY = 'dashboard_todos';
 const MEMO_STORAGE_KEY = 'dashboard_memo';
 
 let todos = [];
+let todosLoaded = false;
 
 async function loadTodos() {
-  /* 1) 이미 저장된 할 일이 있으면 시트로 덮어쓰지 않음 */
+  /* 이미 한 번 로드했으면 메모리의 todos를 유지 (5분마다 호출에도 안전) */
+  if (todosLoaded) return;
+
+  /* 1) localStorage에 저장된 할 일이 있으면 그대로 사용 */
   try {
     const raw = localStorage.getItem(TODO_STORAGE_KEY);
     if (raw !== null) {
-      todos = JSON.parse(raw);
-      if (!Array.isArray(todos)) todos = [];
-      renderTodos();
-      return;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        todos = parsed;
+        todosLoaded = true;
+        renderTodos();
+        return;
+      }
     }
-  } catch { todos = []; }
+  } catch { /* localStorage 파싱 실패 시 아래로 진행 */ }
 
-  /* 2) 최초 실행: 시트에 데이터가 있으면 가져와 로컬에 한 번 저장 */
+  /* 2) 최초 실행 & localStorage 없음: 시트에서 한 번만 가져옴 */
   const rows = await fetchSheetData(CONFIG.SHEETS.TODO);
   if (rows && rows.length > 1) {
     todos = rows.slice(1).map((r, i) => ({
@@ -28,6 +35,7 @@ async function loadTodos() {
   } else {
     todos = [];
   }
+  todosLoaded = true;
   renderTodos();
   saveTodosLocal();
 }
@@ -108,24 +116,31 @@ function initTodoInput() {
    메모
    ================================================================= */
 
+let memoLoaded = false;
+
 async function loadMemo() {
+  if (memoLoaded) return;
+
   const ta = document.getElementById('memo-textarea');
 
-  /* 1) 한 번이라도 저장된 적이 있으면(localStorage 키 존재) 시트로 덮어쓰지 않음 */
+  /* 1) localStorage에 저장된 메모가 있으면 그대로 사용 */
   try {
-    if (localStorage.getItem(MEMO_STORAGE_KEY) !== null) {
-      ta.value = localStorage.getItem(MEMO_STORAGE_KEY);
+    const saved = localStorage.getItem(MEMO_STORAGE_KEY);
+    if (saved !== null) {
+      ta.value = saved;
+      memoLoaded = true;
       return;
     }
   } catch { /* ignore */ }
 
-  /* 2) 최초 실행: 시트에서 불러와 로컬에 저장 */
+  /* 2) 최초 실행 & localStorage 없음: 시트에서 한 번만 가져옴 */
   const rows = await fetchSheetData(CONFIG.SHEETS.MEMO);
   if (rows && rows.length > 0) {
     ta.value = rows.map(r => r.join('\t')).join('\n');
   } else {
     ta.value = '';
   }
+  memoLoaded = true;
   saveMemoLocal();
 }
 
