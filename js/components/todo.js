@@ -1,57 +1,108 @@
 /* =================================================================
-   TODO + 메모 컴포넌트 (localStorage 우선 저장)
+   TODO + 메모 컴포넌트 (Google Sheets 양방향 연동)
+   
+   읽기: Google Sheets API (API 키) → localStorage 백업
+   쓰기: Google Apps Script 웹 앱 → localStorage 백업
    ================================================================= */
 
 const TODO_STORAGE_KEY = 'dashboard_todos';
 const MEMO_STORAGE_KEY = 'dashboard_memo';
 
 let todos = [];
-let todosLoaded = false;
+let todoSaveTimer = null;
+let memoSaveTimer = null;
+
+/* =================================================================
+   Google Apps Script 웹 앱으로 시트에 쓰기
+   ================================================================= */
+
+function postToAppsScript(payload) {
+  if (!CONFIG.APPS_SCRIPT_URL) return;
+  try {
+    const json = JSON.stringify(payload);
+    const url = CONFIG.APPS_SCRIPT_URL + '?data=' + encodeURIComponent(json);
+    const img = document.createElement('img');
+    img.style.display = 'none';
+    document.body.appendChild(img);
+    img.onload = img.onerror = () => img.remove();
+    img.src = url;
+    console.log('[시트 저장 전송]', payload.action);
+  } catch (err) {
+    console.warn('[시트 저장 실패]', err.message);
+  }
+}
+
+function scheduleSaveTodosToSheet() {
+  clearTimeout(todoSaveTimer);
+  todoSaveTimer = setTimeout(() => {
+    postToAppsScript({ action: 'saveTodos', todos });
+  }, 1000);
+}
+
+function scheduleSaveMemoToSheet() {
+  clearTimeout(memoSaveTimer);
+  memoSaveTimer = setTimeout(() => {
+    const memo = document.getElementById('memo-textarea').value;
+    postToAppsScript({ action: 'saveMemo', memo });
+  }, 2000);
+}
+
+/* =================================================================
+   TODO 로드
+   ================================================================= */
 
 async function loadTodos() {
-  /* 이미 한 번 로드했으면 메모리의 todos를 유지 (5분마다 호출에도 안전) */
-  if (todosLoaded) return;
-
-  /* 1) localStorage에 저장된 할 일이 있으면 그대로 사용 */
-  try {
-    const raw = localStorage.getItem(TODO_STORAGE_KEY);
-    if (raw !== null) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        todos = parsed;
-        todosLoaded = true;
-        renderTodos();
-        return;
-      }
-    }
-  } catch { /* localStorage 파싱 실패 시 아래로 진행 */ }
-
-  /* 2) 최초 실행 & localStorage 없음: 시트에서 한 번만 가져옴 */
   const rows = await fetchSheetData(CONFIG.SHEETS.TODO);
-  if (rows && rows.length > 1) {
-    todos = rows.slice(1).map((r, i) => ({
-      id: i, text: r[0] || '', done: (r[1] || '').toUpperCase() === 'TRUE',
-    })).filter(t => t.text.trim());
-  } else {
-    todos = [];
+
+  if (rows === null) {
+    loadTodosFromLocal();
+    return;
   }
-  todosLoaded = true;
+
+  if (rows.length === 0) {
+    loadTodosFromLocal();
+    if (todos.length > 0) scheduleSaveTodosToSheet();
+    return;
+  }
+
+  todos = rows.slice(1).map((r, i) => ({
+    id: Date.now() + i,
+    text: r[0] || '',
+    done: (r[1] || '').toUpperCase() === 'TRUE',
+  })).filter(t => t.text.trim());
+
   renderTodos();
   saveTodosLocal();
 }
 
-function loadTodosLocal() {
+function loadTodosFromLocal() {
   try {
-    const s = localStorage.getItem(TODO_STORAGE_KEY);
-    todos = s ? JSON.parse(s) : [];
-    if (!Array.isArray(todos)) todos = [];
-  } catch { todos = []; }
+    const raw = localStorage.getItem(TODO_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) { todos = parsed; renderTodos(); return; }
+    }
+  } catch { /* ignore */ }
+  todos = [];
   renderTodos();
 }
+
+/* =================================================================
+   TODO 저장 (localStorage + Google Sheets)
+   ================================================================= */
 
 function saveTodosLocal() {
   localStorage.setItem(TODO_STORAGE_KEY, JSON.stringify(todos));
 }
+
+function saveTodos() {
+  saveTodosLocal();
+  scheduleSaveTodosToSheet();
+}
+
+/* =================================================================
+   TODO CRUD
+   ================================================================= */
 
 function renderTodos() {
   const list = document.getElementById('todo-list');
@@ -76,20 +127,22 @@ function escapeTodoHtml(text) {
 function toggleTodo(id) {
   const t = todos.find(x => x.id === id);
   if (t) t.done = !t.done;
-  renderTodos(); saveTodosLocal();
+  renderTodos();
+  saveTodos();
 }
 
 function deleteTodo(id) {
   todos = todos.filter(x => x.id !== id);
-  renderTodos(); saveTodosLocal();
+  renderTodos();
+  saveTodos();
   if (typeof updateDayMarkersOnStrip === 'function') updateDayMarkersOnStrip();
 }
 
 function addTodo(text) {
   if (!text.trim()) return;
-  const maxId = todos.reduce((m, t) => Math.max(m, t.id), -1);
-  todos.push({ id: maxId + 1, text: text.trim(), done: false });
-  renderTodos(); saveTodosLocal();
+  todos.push({ id: Date.now(), text: text.trim(), done: false });
+  renderTodos();
+  saveTodos();
   if (typeof updateDayMarkersOnStrip === 'function') updateDayMarkersOnStrip();
 }
 
@@ -116,46 +169,54 @@ function initTodoInput() {
    메모
    ================================================================= */
 
-let memoLoaded = false;
-
 async function loadMemo() {
-  if (memoLoaded) return;
-
   const ta = document.getElementById('memo-textarea');
 
-  /* 1) localStorage에 저장된 메모가 있으면 그대로 사용 */
+  const rows = await fetchSheetData(CONFIG.SHEETS.MEMO);
+
+  if (rows === null) {
+    loadMemoFromLocal();
+    return;
+  }
+
+  if (rows.length === 0) {
+    loadMemoFromLocal();
+    if (ta.value) scheduleSaveMemoToSheet();
+    return;
+  }
+
+  ta.value = rows.map(r => r.join('\t')).join('\n');
+  saveMemoLocal();
+}
+
+function loadMemoFromLocal() {
   try {
     const saved = localStorage.getItem(MEMO_STORAGE_KEY);
     if (saved !== null) {
-      ta.value = saved;
-      memoLoaded = true;
+      document.getElementById('memo-textarea').value = saved;
       return;
     }
   } catch { /* ignore */ }
-
-  /* 2) 최초 실행 & localStorage 없음: 시트에서 한 번만 가져옴 */
-  const rows = await fetchSheetData(CONFIG.SHEETS.MEMO);
-  if (rows && rows.length > 0) {
-    ta.value = rows.map(r => r.join('\t')).join('\n');
-  } else {
-    ta.value = '';
-  }
-  memoLoaded = true;
-  saveMemoLocal();
+  document.getElementById('memo-textarea').value = '';
 }
 
 function saveMemoLocal() {
   localStorage.setItem(MEMO_STORAGE_KEY, document.getElementById('memo-textarea').value);
 }
 
+function saveMemo() {
+  saveMemoLocal();
+  scheduleSaveMemoToSheet();
+}
+
 function initMemo() {
   let t;
   const ta = document.getElementById('memo-textarea');
   ta.addEventListener('input', () => {
-    clearTimeout(t); t = setTimeout(saveMemoLocal, 500);
+    clearTimeout(t); t = setTimeout(saveMemo, 500);
   });
-  ta.addEventListener('blur', saveMemoLocal);
+  ta.addEventListener('blur', saveMemo);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') saveMemoLocal();
+    if (document.visibilityState === 'hidden') saveMemo();
   });
 }

@@ -9,6 +9,10 @@ const CONFIG = {
 
   SPREADSHEET_ID: '1416MR-DO51qbqebk3xklr3_BPX1cDaiRm-6A-foy4bs',
 
+  // Google Apps Script 웹 앱 URL (할일/메모 시트 쓰기용)
+  // 배포 후 아래 URL을 교체하세요
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx3FqdJ-Kdmk7K9f5VYloKSBhxb3UPjLQAfEjEDMm0eHpJERkNERXQob0VXi9jt7xW0/exec',
+
   SHEETS: {
     TIMETABLE: '시트1',
     TODO: '할일',
