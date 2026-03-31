@@ -349,15 +349,33 @@ function initCalendarStrip() {
 
 /* =================================================================
    드래그 앤 드롭 (컬럼 간 자유 이동)
+   가운데 열은 카드가 .center-cards 안에만 있으므로, 플레이스홀더도 반드시 그 안에 둔다.
+   (이전에는 section에 insertBefore 해서 DOM 오류·불안정 드롭이 났음)
    ================================================================= */
 
 function initDragAndDrop() {
   let draggedCard = null;
   let placeholder = null;
-  const allColumns = document.querySelectorAll('.column[data-column]');
+  const dashboard = document.querySelector('.dashboard-container');
+  if (!dashboard) return;
 
-  function getDropTarget(y, column) {
-    const cards = [...column.querySelectorAll('.card:not(.dragging):not(.card-transparent)')];
+  function removePlaceholder() {
+    if (placeholder && placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
+    placeholder = null;
+  }
+
+  /** 카드가 들어갈 직접 부모: 중앙은 .center-cards, 좌·우는 section.column */
+  function getCardContainer(columnEl) {
+    if (columnEl.dataset.column === 'center') {
+      return columnEl.querySelector('.center-cards');
+    }
+    return columnEl;
+  }
+
+  function getDropTarget(y, container) {
+    const cards = [...container.querySelectorAll('.card:not(.dragging)')].filter(
+      (c) => !c.classList.contains('drop-placeholder')
+    );
     for (const card of cards) {
       const rect = card.getBoundingClientRect();
       if (y < rect.top + rect.height / 2) return card;
@@ -365,87 +383,74 @@ function initDragAndDrop() {
     return null;
   }
 
-  function removePlaceholder() {
-    if (placeholder && placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
-    placeholder = null;
+  function onDragStart(e) {
+    const card = e.target.closest('.card[draggable="true"]');
+    if (!card || !dashboard.contains(card)) return;
+    draggedCard = card;
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', card.dataset.cardId || '');
+    placeholder = document.createElement('div');
+    placeholder.className = 'drop-placeholder';
+    placeholder.style.height = `${Math.max(card.offsetHeight, 80)}px`;
   }
 
-  document.querySelectorAll('.card[draggable="true"]').forEach(card => {
-    card.addEventListener('dragstart', (e) => {
-      draggedCard = card;
-      card.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', card.dataset.cardId);
-      placeholder = document.createElement('div');
-      placeholder.className = 'drop-placeholder';
-      placeholder.style.height = card.offsetHeight + 'px';
-    });
+  function onDragEnd() {
+    if (draggedCard) draggedCard.classList.remove('dragging');
+    removePlaceholder();
+    draggedCard = null;
+  }
 
-    card.addEventListener('dragend', () => {
-      if (draggedCard) draggedCard.classList.remove('dragging');
-      removePlaceholder();
-      document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
-      draggedCard = null;
-    });
-  });
+  document.addEventListener('dragstart', onDragStart);
+  document.addEventListener('dragend', onDragEnd);
 
-  allColumns.forEach(col => {
+  document.querySelectorAll('.column[data-column]').forEach((col) => {
     col.addEventListener('dragover', (e) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       if (!draggedCard) return;
 
+      const container = getCardContainer(col);
+      if (!container) return;
+
       removePlaceholder();
       placeholder = document.createElement('div');
       placeholder.className = 'drop-placeholder';
-      placeholder.style.height = draggedCard.offsetHeight + 'px';
+      placeholder.style.height = `${Math.max(draggedCard.offsetHeight, 80)}px`;
 
-      const target = getDropTarget(e.clientY, col);
-      if (target) {
-        col.insertBefore(placeholder, target);
+      const y = e.clientY;
+      const cr = container.getBoundingClientRect();
+      let target = null;
+      if (y < cr.top) {
+        target = container.querySelector('.card:not(.dragging)');
+      } else if (y > cr.bottom) {
+        target = null;
       } else {
-        const dockZone = col.querySelector('.dock-zone');
-        const seeThrough = col.querySelector('.card-see-through');
-        if (dockZone) col.insertBefore(placeholder, dockZone);
-        else if (seeThrough) col.insertBefore(placeholder, seeThrough);
-        else col.appendChild(placeholder);
+        target = getDropTarget(y, container);
       }
-    });
 
-    col.addEventListener('dragleave', (e) => {
-      if (!col.contains(e.relatedTarget)) removePlaceholder();
+      if (target && target !== draggedCard) {
+        container.insertBefore(placeholder, target);
+      } else {
+        container.appendChild(placeholder);
+      }
     });
 
     col.addEventListener('drop', (e) => {
       e.preventDefault();
       if (!draggedCard) return;
+      const container = getCardContainer(col);
       if (placeholder && placeholder.parentNode) {
         placeholder.parentNode.insertBefore(draggedCard, placeholder);
-      } else {
-        col.appendChild(draggedCard);
+      } else if (container) {
+        container.appendChild(draggedCard);
       }
       removePlaceholder();
-      draggedCard.classList.remove('dragging');
-      document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+      if (draggedCard) draggedCard.classList.remove('dragging');
       draggedCard = null;
+      if (typeof saveCardLayoutOrder === 'function') saveCardLayoutOrder();
     });
   });
-
-  const centerCards = document.querySelector('.center-cards');
-  if (centerCards) {
-    centerCards.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-    });
-    centerCards.addEventListener('drop', (e) => {
-      e.preventDefault();
-      if (!draggedCard) return;
-      removePlaceholder();
-      centerCards.appendChild(draggedCard);
-      draggedCard.classList.remove('dragging');
-      draggedCard = null;
-    });
-  }
 }
 
 /* =================================================================
@@ -458,6 +463,21 @@ async function loadAllData() {
     loadMemo(), loadLinks(),
   ]);
   updateDayMarkersOnStrip();
+}
+
+/* =================================================================
+   독 영역: 패널 바깥 클릭 시 고정(pin) 해제
+   ================================================================= */
+
+function initDockPanelCloseOutside() {
+  document.addEventListener('mousedown', (e) => {
+    const wrapA = document.getElementById('settings-wrapper');
+    const wrapB = document.getElementById('api-settings-wrapper');
+    const panelA = document.getElementById('settings-panel');
+    const panelB = document.getElementById('api-settings-panel');
+    if (wrapA && panelA && !wrapA.contains(e.target)) panelA.classList.remove('pinned');
+    if (wrapB && panelB && !wrapB.contains(e.target)) panelB.classList.remove('pinned');
+  });
 }
 
 /* =================================================================
@@ -478,6 +498,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initMemo();
   initSchoolSearch();
   initSettings();
+  initDockPanelCloseOutside();
+  initApiSettings();
+  initLinksEditor();
+  initCardLayout();
   initDragAndDrop();
   loadAllData();
 
@@ -491,9 +515,29 @@ document.addEventListener('DOMContentLoaded', () => {
 function livelyPropertyListener(name, val) {
   switch (name) {
     case 'apiKey':
-      CONFIG.GOOGLE_API_KEY = val; loadAllData(); break;
+      CONFIG.GOOGLE_API_KEY = val;
+      try {
+        const raw = localStorage.getItem(API_CONFIG_STORAGE_KEY);
+        const o = raw ? JSON.parse(raw) : {};
+        o.googleApiKey = val;
+        localStorage.setItem(API_CONFIG_STORAGE_KEY, JSON.stringify(o));
+      } catch { /* ignore */ }
+      invalidateDashboardCaches();
+      loadAllData();
+      break;
     case 'spreadsheetId':
-      CONFIG.SPREADSHEET_ID = val; loadAllData(); break;
+      CONFIG.SPREADSHEET_ID = typeof parseSpreadsheetIdFromInput === 'function'
+        ? parseSpreadsheetIdFromInput(val)
+        : val;
+      try {
+        const raw = localStorage.getItem(API_CONFIG_STORAGE_KEY);
+        const o = raw ? JSON.parse(raw) : {};
+        o.spreadsheetId = CONFIG.SPREADSHEET_ID;
+        localStorage.setItem(API_CONFIG_STORAGE_KEY, JSON.stringify(o));
+      } catch { /* ignore */ }
+      invalidateDashboardCaches();
+      loadAllData();
+      break;
     case 'refreshInterval':
       CONFIG.REFRESH_INTERVAL = parseInt(val) * 60 * 1000; break;
   }

@@ -7,6 +7,11 @@ let timetableViewDayOverride = null;
 let sheetTimetableCache = null;
 let timetableLoaded = false;
 
+function resetTimetableCache() {
+  sheetTimetableCache = null;
+  timetableLoaded = false;
+}
+
 /* --- 로컬 오버라이드 (임시 추가/삭제) --- */
 
 function loadTTOverrides() {

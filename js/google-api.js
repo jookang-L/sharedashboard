@@ -1,17 +1,19 @@
 /* =================================================================
    설정 및 Google Sheets API
    =================================================================
-   ▼ 아래 GOOGLE_API_KEY 값을 본인의 API 키로 수정하세요
+   기본값은 비어 있습니다. 하단 독의 주황색 톱니바퀴(연동 설정)에서 입력하거나
+   localStorage(dashboard_api_config)에 저장된 값이 적용됩니다.
    ================================================================= */
 
-const CONFIG = {
-  GOOGLE_API_KEY: 'AIzaSyD4jUD7_3kx1AP2JrzUGJlSiIdHNY9OjUc',
+const API_CONFIG_STORAGE_KEY = 'dashboard_api_config';
 
-  SPREADSHEET_ID: '1416MR-DO51qbqebk3xklr3_BPX1cDaiRm-6A-foy4bs',
+const CONFIG = {
+  GOOGLE_API_KEY: '',
+
+  SPREADSHEET_ID: '',
 
   // Google Apps Script 웹 앱 URL (할일/메모 시트 쓰기용)
-  // 배포 후 아래 URL을 교체하세요
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx3FqdJ-Kdmk7K9f5VYloKSBhxb3UPjLQAfEjEDMm0eHpJERkNERXQob0VXi9jt7xW0/exec',
+  APPS_SCRIPT_URL: '',
 
   SHEETS: {
     TIMETABLE: '시트1',
@@ -23,9 +25,9 @@ const CONFIG = {
 
   // NEIS 교육정보 API (급식 조회용)
   NEIS: {
-    API_KEY: '62d00e211727449180139e7020936f2e',
-    ATPT_OFCDC_SC_CODE: 'N10',       // 충청남도교육청
-    SCHOOL_NAME: '설화고등학교',
+    API_KEY: '',
+    ATPT_OFCDC_SC_CODE: 'N10',       // 충청남도교육청 (키 입력 후 학교 검색 시 덮어씀)
+    SCHOOL_NAME: '',
     SD_SCHUL_CODE: null,              // 자동 조회됨
   },
 
@@ -72,7 +74,50 @@ function daysBetween(a, b) {
    Google Sheets API Fetch
    ================================================================= */
 
+function parseSpreadsheetIdFromInput(raw) {
+  const s = (raw || '').trim();
+  if (!s) return '';
+  const m = s.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (m) return m[1];
+  return s;
+}
+
+function normalizeAppsScriptUrl(raw) {
+  const s = (raw || '').trim();
+  if (!s) return '';
+  return s.replace(/\/$/, '');
+}
+
+/** localStorage에 저장된 연동 설정을 CONFIG에 반영 (페이지 로드 시 1회) */
+function applyStoredApiConfig() {
+  try {
+    const saved = localStorage.getItem(API_CONFIG_STORAGE_KEY);
+    if (!saved) return;
+    const o = JSON.parse(saved);
+    if (o.googleApiKey != null && o.googleApiKey !== '') CONFIG.GOOGLE_API_KEY = String(o.googleApiKey).trim();
+    if (o.spreadsheetId != null && o.spreadsheetId !== '') {
+      CONFIG.SPREADSHEET_ID = parseSpreadsheetIdFromInput(String(o.spreadsheetId));
+    }
+    if (o.appsScriptUrl != null && o.appsScriptUrl !== '') {
+      CONFIG.APPS_SCRIPT_URL = normalizeAppsScriptUrl(String(o.appsScriptUrl));
+    }
+    if (o.neisApiKey != null && o.neisApiKey !== '') CONFIG.NEIS.API_KEY = String(o.neisApiKey).trim();
+  } catch { /* ignore */ }
+}
+
+applyStoredApiConfig();
+
+/** 시트/스프레드시트 ID 변경 시 다른 스크립트의 캐시를 비우고 데이터를 다시 불러올 때 사용 */
+function invalidateDashboardCaches() {
+  if (typeof resetTimetableCache === 'function') resetTimetableCache();
+  if (typeof resetMealCache === 'function') resetMealCache();
+}
+
 async function fetchSheetData(sheetName, range) {
+  if (!CONFIG.GOOGLE_API_KEY || !CONFIG.SPREADSHEET_ID) {
+    console.warn(`[시트 로딩 생략] ${sheetName}: API 키 또는 스프레드시트 ID가 없습니다`);
+    return null;
+  }
   const fullRange = range ? `${sheetName}!${range}` : sheetName;
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/${encodeURIComponent(fullRange)}?key=${CONFIG.GOOGLE_API_KEY}`;
   try {

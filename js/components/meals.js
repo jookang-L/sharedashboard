@@ -77,17 +77,32 @@ function renderSchoolResults(results) {
   searchEl.parentNode.insertBefore(ul, searchEl.nextSibling);
 }
 
-function initSchoolSearch() {
+function hasNeisApiKey() {
+  return !!(CONFIG.NEIS.API_KEY && String(CONFIG.NEIS.API_KEY).trim());
+}
+
+/** NEIS 키·저장 학교 상태에 맞춰 상단 학교명만 갱신 (연동 설정 저장 후에도 호출) */
+function updateSchoolDisplayFromConfig() {
   const saved = loadSavedSchool();
+  const el = document.getElementById('school-current');
+
+  if (!hasNeisApiKey()) {
+    if (el) el.textContent = '';
+    return;
+  }
   if (saved) {
     applySchool(saved);
   } else {
     applySchool({
       eduCode: CONFIG.NEIS.ATPT_OFCDC_SC_CODE,
       schoolCode: CONFIG.NEIS.SD_SCHUL_CODE,
-      schoolName: CONFIG.NEIS.SCHOOL_NAME,
+      schoolName: CONFIG.NEIS.SCHOOL_NAME || '학교를 검색하세요',
     });
   }
+}
+
+function initSchoolSearch() {
+  updateSchoolDisplayFromConfig();
 
   const input = document.getElementById('school-name-input');
   const btn = document.getElementById('school-search-btn');
@@ -151,6 +166,11 @@ function initMealTypeTabs() {
 
 let mealCache = null;
 let mealCacheDate = null;
+
+function resetMealCache() {
+  mealCache = null;
+  mealCacheDate = null;
+}
 
 async function lookupSchoolCode() {
   if (CONFIG.NEIS.SD_SCHUL_CODE) return CONFIG.NEIS.SD_SCHUL_CODE;
@@ -222,6 +242,12 @@ function renderFromCache() {
 
 async function loadLunch() {
   const todayStr = dateToStr(getNow());
+
+  if (!hasNeisApiKey()) {
+    updateSchoolDisplayFromConfig();
+    renderLunch(['급식은 나이스(NEIS) API 키가 있어야 불러올 수 있습니다. 아래 연동 설정(주황 톱니)에서 키를 입력하세요.']);
+    return;
+  }
 
   if (mealCache && mealCacheDate === todayStr) {
     renderFromCache();

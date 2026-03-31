@@ -11,6 +11,7 @@ const DEFAULT_SETTINGS = {
   cardOpacity: 72,
   font: "'Noto Sans KR', sans-serif",
   fontColor: '#1a1a1a',
+  accentColor: '#4a7cff',
 };
 
 function loadSettings() {
@@ -32,6 +33,16 @@ function hexToRgb(hex) {
   return { r, g, b };
 }
 
+function applyAccentColor(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  const root = document.documentElement;
+  root.style.setProperty('--accent', hex);
+  root.style.setProperty('--accent-r', String(r));
+  root.style.setProperty('--accent-g', String(g));
+  root.style.setProperty('--accent-b', String(b));
+  root.style.setProperty('--accent-glow', `rgba(${r}, ${g}, ${b}, 0.25)`);
+}
+
 function applySettings(settings) {
   const root = document.documentElement;
 
@@ -49,6 +60,8 @@ function applySettings(settings) {
   document.body.style.fontFamily = settings.font;
 
   root.style.setProperty('--text-primary', settings.fontColor);
+
+  applyAccentColor(settings.accentColor || DEFAULT_SETTINGS.accentColor);
 
   const brightness = (bg.r * 299 + bg.g * 587 + bg.b * 114) / 1000;
   const cardBrightness = (card.r * 299 + card.g * 587 + card.b * 114) / 1000;
@@ -85,6 +98,10 @@ function syncUI(settings) {
 
   document.getElementById('setting-font-color').value = settings.fontColor;
   document.getElementById('setting-font-label').textContent = settings.fontColor;
+
+  const ac = settings.accentColor || DEFAULT_SETTINGS.accentColor;
+  document.getElementById('setting-accent-color').value = ac;
+  document.getElementById('setting-accent-label').textContent = ac;
 }
 
 function initSettings() {
@@ -121,6 +138,10 @@ function initSettings() {
     update('fontColor', e.target.value);
   });
 
+  document.getElementById('setting-accent-color').addEventListener('input', e => {
+    update('accentColor', e.target.value);
+  });
+
   document.getElementById('settings-reset').addEventListener('click', () => {
     settings = { ...DEFAULT_SETTINGS };
     applySettings(settings);
@@ -129,14 +150,9 @@ function initSettings() {
   });
 
   const panel = document.getElementById('settings-panel');
-  const wrapper = document.getElementById('settings-wrapper');
   const btn = document.getElementById('settings-btn');
 
   btn.addEventListener('click', () => {
     panel.classList.toggle('pinned');
-  });
-
-  document.addEventListener('mousedown', e => {
-    if (!wrapper.contains(e.target)) panel.classList.remove('pinned');
   });
 }
