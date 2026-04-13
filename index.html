@@ -108,7 +108,7 @@
         <span class="app-titlebar-brand" id="app-titlebar-brand">Jook Board</span>
       </div>
       <div class="app-titlebar-right">
-        <button type="button" class="app-titlebar-btn" id="titlebar-widget-btn" title="위젯 모드 (테두리 없음·항상 위)">
+        <button type="button" class="app-titlebar-btn" id="titlebar-widget-btn" title="위젯 모드 (테두리 없음·투명, 일반 창처럼 겹침)">
           <i class="fas fa-border-all"></i>
           <span class="app-titlebar-btn-label">위젯</span>
         </button>
@@ -234,9 +234,6 @@
               <h2>MEMO</h2>
             </div>
             <div class="card-body">
-              <div class="memo-preview-wrap" id="memo-preview-wrap">
-                <div class="memo-preview" id="memo-preview" aria-live="polite"></div>
-              </div>
               <textarea class="memo-textarea" id="memo-textarea" placeholder="메모를 입력하세요..."></textarea>
             </div>
           </div>
@@ -369,7 +366,7 @@
                 <div id="electron-desktop-settings" class="electron-desktop-settings" hidden>
                   <h4 class="electron-desktop-title">데스크톱 (Electron)</h4>
                   <p class="api-settings-hint electron-desktop-hint">위젯 모드에서는 상단 <strong>Jook Board</strong> 바 빈 곳을 드래그해 창을 옮길 수 있습니다. 마우스 투과는 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd>으로 전환합니다. 앱 종료: 타이틀바 <strong>닫기</strong>, <kbd>Ctrl</kbd>+<kbd>Q</kbd>, 작업 표시줄 우클릭, <kbd>Alt</kbd>+<kbd>F4</kbd>. 새로고침 <kbd>Ctrl</kbd>+<kbd>R</kbd>, 개발자 도구 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd>.</p>
-                  <label class="electron-checkbox"><input type="checkbox" id="electron-widget-mode"> 위젯 모드 (테두리 없음·투명·항상 위)</label>
+                  <label class="electron-checkbox"><input type="checkbox" id="electron-widget-mode"> 위젯 모드 (테두리 없음·투명, 다른 창에 가려질 수 있음)</label>
                   <label class="electron-checkbox"><input type="checkbox" id="electron-click-through"> 마우스 투과 (바탕화면 클릭이 통과)</label>
                   <label class="electron-checkbox"><input type="checkbox" id="electron-auto-launch"> Windows 로그인 시 실행</label>
                 </div>
@@ -571,7 +568,6 @@
   <script src="js/components/api-settings.js"></script>
   <script src="js/components/onboarding.js"></script>
   <script src="js/components/cards-layout.js"></script>
-  <script src="js/components/memo.view.js"></script>
   <script src="js/electron-bridge.js"></script>
   <script src="js/main.js"></script>
   <script src="js/app-titlebar.js"></script>

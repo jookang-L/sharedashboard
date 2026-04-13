@@ -85,7 +85,7 @@ function createWindow(opts = {}) {
     transparent: widget,
     backgroundColor: widget ? '#00000000' : '#ffffff',
     hasShadow: !widget,
-    alwaysOnTop: widget,
+    alwaysOnTop: false,
     /* 위젯이어도 작업 표시줄에 표시 — 안 보이면 Alt+Tab / 종료가 어려움 */
     skipTaskbar: false,
     webPreferences: {

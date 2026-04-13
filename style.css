@@ -2405,23 +2405,6 @@ body {
   .clock-time { font-size: 2.5rem; }
 }
 
-/* ============================================= */
-/* 메모 요약 (memo.view.js) · Electron           */
-/* ============================================= */
-.memo-preview-wrap {
-  margin-bottom: 8px;
-  font-size: 0.75rem;
-  line-height: 1.45;
-  max-height: 4.5em;
-  overflow: hidden;
-  opacity: 0.9;
-}
-.memo-preview-text { word-break: break-word; }
-.memo-preview-empty {
-  opacity: 0.55;
-  font-size: 0.6875rem;
-}
-
 .electron-drag-region {
   position: fixed;
   top: 0;
