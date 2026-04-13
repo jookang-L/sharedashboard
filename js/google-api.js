@@ -7,6 +7,14 @@
 
 const API_CONFIG_STORAGE_KEY = 'dashboard_api_config';
 
+/** 건의하기 doPost `payload.secret` — Apps Script WEBHOOK_SECRET과 동일 (사용자 설정 없음) */
+const FEEDBACK_WEBHOOK_SECRET_FIXED = 'x9Kf2LqP8sZ0mN7aB3cD4eF6gH1JkL';
+
+/**
+ * 건의하기 전용 웹앱 URL(/exec) — 배포자 시트로만 전송. 연동 설정의 APPS_SCRIPT_URL과 무관.
+ */
+const FEEDBACK_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyNINxhGB0Z4ZdPu4Te3shecFT2K9ozUWtHNsf63r8KhvXb3KE5VCjBMIbnqu9dE2Vb0A/exec';
+
 const CONFIG = {
   GOOGLE_API_KEY: '',
 
@@ -106,6 +114,14 @@ function applyStoredApiConfig() {
 }
 
 applyStoredApiConfig();
+
+function getFeedbackWebhookUrl() {
+  return normalizeAppsScriptUrl(FEEDBACK_WEBAPP_URL);
+}
+
+function getFeedbackWebhookSecret() {
+  return FEEDBACK_WEBHOOK_SECRET_FIXED;
+}
 
 /** 시트/스프레드시트 ID 변경 시 다른 스크립트의 캐시를 비우고 데이터를 다시 불러올 때 사용 */
 function invalidateDashboardCaches() {

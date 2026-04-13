@@ -19,6 +19,8 @@
   --warning: #f59e0b;
   --danger: #ef4444;
   --font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* 본문 기준 크기 — 설정에서 변경 시 html font-size로 전역 rem 스케일 */
+  --font-size-base: 16px;
   --dock-height: 150px;
   --strip-height: 62px;
   --gap: 14px;
@@ -29,6 +31,10 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+html {
+  font-size: var(--font-size-base);
 }
 
 html, body {
@@ -64,6 +70,136 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* ============================================= */
+/* 앱 타이틀바 (Jook Board · 위젯·카드뉴스·닫기·크기) */
+/* ============================================= */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.app-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 6px 14px;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  z-index: 20;
+  -webkit-app-region: drag;
+}
+
+.app-titlebar-left {
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+}
+
+.app-titlebar-brand {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.96);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.app-titlebar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  -webkit-app-region: no-drag;
+}
+
+.app-titlebar-field {
+  -webkit-app-region: no-drag;
+}
+
+.app-titlebar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  -webkit-app-region: no-drag;
+}
+
+.app-titlebar-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.app-titlebar-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.app-titlebar-btn.is-active {
+  background: rgba(74, 124, 255, 0.35);
+  border-color: rgba(74, 124, 255, 0.55);
+  color: #fff;
+}
+
+.app-titlebar-btn-danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #fecaca;
+}
+
+.app-titlebar-btn-label {
+  font-size: 0.6875rem;
+}
+
+@media (max-width: 900px) {
+  .app-titlebar-btn-label {
+    display: none;
+  }
+}
+
+.app-titlebar-select {
+  appearance: none;
+  padding: 6px 28px 6px 10px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  cursor: pointer;
+  max-width: 180px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' fill-opacity='0.6' d='M3 4.5L6 7.5L9 4.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+.app-titlebar-select:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.app-titlebar-select option {
+  color: #1a1a1a;
+  background: #fff;
 }
 
 /* ============================================= */
@@ -136,7 +272,7 @@ body {
   background: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(12px);
   color: var(--text-muted);
-  font-size: 16px;
+  font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
@@ -177,7 +313,7 @@ body {
 }
 
 .settings-title {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   color: #1a1a1a;
   margin-bottom: 16px;
@@ -191,7 +327,7 @@ body {
 
 .settings-group label {
   display: block;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 500;
   color: #666;
   margin-bottom: 6px;
@@ -228,7 +364,7 @@ body {
 }
 
 .settings-color-label {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: #888;
   font-family: monospace;
   min-width: 60px;
@@ -256,7 +392,7 @@ body {
 }
 
 .settings-range-label {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: #888;
   min-width: 28px;
   text-align: right;
@@ -267,7 +403,7 @@ body {
   padding: 8px 10px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: #1a1a1a;
   background: rgba(255, 255, 255, 0.7);
   outline: none;
@@ -292,7 +428,7 @@ body {
   border-radius: 8px;
   background: transparent;
   color: #888;
-  font-size: 12px;
+  font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -304,10 +440,190 @@ body {
 }
 
 .settings-subhint {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: #888;
   line-height: 1.45;
   margin: -4px 0 10px;
+}
+
+.settings-theme-group .settings-subhint {
+  margin-bottom: 8px;
+}
+
+.settings-theme-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.settings-theme-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 4.5rem;
+  padding: 8px 10px 7px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.75);
+  color: #333;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s, transform 0.12s;
+}
+
+.settings-theme-swatch {
+  display: block;
+  height: 7px;
+  border-radius: 5px;
+  width: 100%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.settings-theme-label {
+  display: block;
+  text-align: center;
+  font-size: 0.6875rem;
+  letter-spacing: -0.02em;
+}
+
+/* Color Hunt식 4색 스트립 (각 테마 팔레트) */
+.settings-theme-chip[data-theme="default"] .settings-theme-swatch {
+  background: linear-gradient(90deg, #ffffff 0%, #f8fafc 30%, #1f2937 65%, #4a7cff 100%);
+}
+.settings-theme-chip[data-theme="spring"] .settings-theme-swatch {
+  background: linear-gradient(90deg, #d8f3dc 0%, #95d5b2 33%, #52b788 66%, #1b4332 100%);
+}
+.settings-theme-chip[data-theme="summer"] .settings-theme-swatch {
+  background: linear-gradient(90deg, #023047 0%, #0b7189 33%, #22d3ee 66%, #e3fcff 100%);
+}
+.settings-theme-chip[data-theme="autumn"] .settings-theme-swatch {
+  background: linear-gradient(90deg, #5c4033 0%, #f57c00 38%, #fff4e6 72%, #3e2723 100%);
+}
+.settings-theme-chip[data-theme="winter"] .settings-theme-swatch {
+  background: linear-gradient(90deg, #37474f 0%, #b0bec5 35%, #4fc3f7 70%, #eceff1 100%);
+}
+.settings-theme-chip[data-theme="sakura"] .settings-theme-swatch {
+  background: linear-gradient(90deg, #fce7ef 0%, #f8bbd9 35%, #ec407a 68%, #880e4f 100%);
+}
+.settings-theme-chip[data-theme="maple"] .settings-theme-swatch {
+  background: linear-gradient(90deg, #3e2723 0%, #ff6e40 34%, #ffccbc 68%, #bf360c 100%);
+}
+.settings-theme-chip[data-theme="school"] .settings-theme-swatch {
+  background: linear-gradient(90deg, #1a237e 0%, #5c6bc0 35%, #9fa8da 70%, #f5f7ff 100%);
+}
+
+.settings-theme-chip:hover {
+  background: rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.1);
+  border-color: rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.35);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.settings-theme-chip.is-active {
+  background: rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.16);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.28);
+}
+
+.settings-theme-group .settings-subhint a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.settings-custom-theme-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.settings-custom-theme-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.settings-input-inline {
+  flex: 1;
+  min-width: 120px;
+  padding: 7px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-family: var(--font-family);
+}
+
+.settings-mini-btn {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.45);
+  background: rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.12);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: var(--font-family);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.settings-mini-btn:hover {
+  background: rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.22);
+}
+
+.settings-custom-theme-hint {
+  margin-top: 6px !important;
+}
+
+.settings-theme-chips-custom {
+  margin-top: 8px;
+  align-items: stretch;
+}
+
+.settings-theme-chip-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.settings-theme-chip-wrap .settings-theme-chip {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-theme-chip-delete {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  margin-top: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #999;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.settings-theme-chip-delete:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.settings-custom-themes-empty {
+  font-size: 0.6875rem;
+  color: #aaa;
+  padding: 4px 0;
 }
 
 .settings-card-add {
@@ -318,7 +634,7 @@ body {
   border-radius: 10px;
   background: rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.06);
   color: var(--accent);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   font-family: var(--font-family);
   cursor: pointer;
@@ -341,7 +657,7 @@ body {
   justify-content: space-between;
   gap: 8px;
   padding: 6px 0;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--text-secondary);
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
@@ -352,7 +668,7 @@ body {
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.85);
-  font-size: 11px;
+  font-size: 0.6875rem;
   cursor: pointer;
   font-family: var(--font-family);
 }
@@ -375,7 +691,7 @@ body {
   background: rgba(245, 158, 11, 0.45);
   backdrop-filter: blur(12px);
   color: #b45309;
-  font-size: 16px;
+  font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 2px 10px rgba(180, 83, 9, 0.2);
@@ -415,7 +731,7 @@ body {
 }
 
 .api-settings-hint {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: #64748b;
   line-height: 1.5;
   margin: -8px 0 12px;
@@ -426,7 +742,7 @@ body {
   padding: 8px 10px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-family: ui-monospace, 'Consolas', monospace;
   color: #1a1a1a;
   background: rgba(255, 255, 255, 0.85);
@@ -455,7 +771,7 @@ body {
   border-radius: 8px;
   background: #f59e0b;
   color: #fff;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
   transition: filter 0.2s;
@@ -471,7 +787,7 @@ body {
   border-radius: 8px;
   background: transparent;
   color: #888;
-  font-size: 12px;
+  font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -491,7 +807,7 @@ body {
 }
 
 .clock-time {
-  font-size: 60px;
+  font-size: 3.75rem;
   font-weight: 700;
   letter-spacing: 4px;
   color: var(--text-primary);
@@ -499,7 +815,7 @@ body {
 }
 
 .clock-date {
-  font-size: 15px;
+  font-size: 0.9375rem;
   color: var(--text-secondary);
   margin-top: 4px;
   font-weight: 400;
@@ -570,12 +886,12 @@ body {
 }
 
 .card-header i {
-  font-size: 15px;
+  font-size: 0.9375rem;
   color: var(--accent);
 }
 
 .card-header h2 {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   flex: 1;
   letter-spacing: 0.3px;
@@ -585,7 +901,7 @@ body {
 .card-header .badge {
   background: var(--accent);
   color: #fff;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 600;
   padding: 3px 10px;
   border-radius: 20px;
@@ -602,7 +918,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 0.8125rem;
   transition: all 0.2s ease;
 }
 
@@ -621,7 +937,7 @@ body {
   background: rgba(0, 0, 0, 0.06);
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 12px;
+  font-size: 0.75rem;
   transition: background 0.15s, color 0.15s;
 }
 
@@ -633,7 +949,7 @@ body {
 .card-custom-title-input {
   flex: 1;
   min-width: 0;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   font-family: var(--font-family);
   color: var(--text-primary);
@@ -690,7 +1006,7 @@ body {
   padding: 5px 4px;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-secondary);
   background: rgba(255, 255, 255, 0.5);
@@ -761,7 +1077,7 @@ body {
   border-radius: 7px;
   background: transparent;
   color: #333;
-  font-size: 13px;
+  font-size: 0.8125rem;
   cursor: pointer;
   transition: background 0.15s;
   text-align: left;
@@ -775,7 +1091,7 @@ body {
 .tt-ctx-btn i {
   width: 14px;
   text-align: center;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .timetable-item .period {
@@ -787,20 +1103,20 @@ body {
   background: rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.12);
   color: var(--accent);
   border-radius: 9px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 700;
   flex-shrink: 0;
 }
 
 .timetable-item .subject {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 500;
   flex: 1;
   color: var(--text-primary);
 }
 
 .timetable-item .time-range {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--text-muted);
 }
 
@@ -818,7 +1134,7 @@ body {
   padding: 6px 10px;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 0.75rem;
   background: rgba(255, 255, 255, 0.6);
   color: var(--text-primary);
   outline: none;
@@ -836,7 +1152,7 @@ body {
   background: var(--accent);
   color: #fff;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 0.75rem;
   transition: opacity 0.2s;
 }
 
@@ -855,7 +1171,7 @@ body {
   padding: 6px 8px;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   color: var(--text-secondary);
   background: rgba(255, 255, 255, 0.5);
@@ -875,7 +1191,7 @@ body {
 }
 
 .school-current {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--text-muted);
   margin-bottom: 8px;
   padding: 0 4px;
@@ -894,7 +1210,7 @@ body {
 
 .school-results li {
   padding: 6px 10px;
-  font-size: 12px;
+  font-size: 0.75rem;
   cursor: pointer;
   color: var(--text-primary);
   border-bottom: 1px solid rgba(0, 0, 0, 0.04);
@@ -908,7 +1224,7 @@ body {
 }
 
 .school-results li .school-result-sub {
-  font-size: 10px;
+  font-size: 0.625rem;
   color: var(--text-muted);
   margin-left: 6px;
 }
@@ -927,7 +1243,7 @@ body {
   align-items: center;
   gap: 10px;
   padding: 7px 12px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text-secondary);
   border-radius: 8px;
   transition: background 0.2s ease;
@@ -993,12 +1309,12 @@ body {
   content: '\f00c';
   font-family: 'Font Awesome 6 Free';
   font-weight: 900;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: #fff;
 }
 
 .todo-text {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 400;
   flex: 1;
   color: var(--text-primary);
@@ -1014,7 +1330,7 @@ body {
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 12px;
+  font-size: 0.75rem;
   padding: 4px;
   opacity: 0;
   transition: all 0.2s ease;
@@ -1041,7 +1357,7 @@ body {
   padding: 12px;
   color: var(--text-primary);
   font-family: var(--font-family);
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.7;
   resize: none;
   outline: none;
@@ -1075,7 +1391,7 @@ body {
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text-secondary);
 }
 
@@ -1085,7 +1401,7 @@ body {
 }
 
 .folder-item i {
-  font-size: 15px;
+  font-size: 0.9375rem;
   color: var(--warning);
   flex-shrink: 0;
 }
@@ -1100,7 +1416,7 @@ body {
 }
 
 .folder-item .folder-path {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1144,12 +1460,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 0.9375rem;
   color: #fff;
 }
 
 .link-name {
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 500;
   text-align: center;
   overflow: hidden;
@@ -1170,7 +1486,7 @@ body {
 }
 
 .card-header-hint {
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 500;
   color: var(--text-muted);
   margin-left: 8px;
@@ -1214,7 +1530,7 @@ body {
 }
 
 .link-editor-header h3 {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -1223,7 +1539,7 @@ body {
   background: none;
   border: none;
   color: var(--text-muted);
-  font-size: 16px;
+  font-size: 1rem;
   cursor: pointer;
   padding: 4px;
   border-radius: 8px;
@@ -1236,7 +1552,7 @@ body {
 }
 
 .link-editor-intro {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--text-muted);
   padding: 0 18px 10px;
   line-height: 1.45;
@@ -1270,7 +1586,7 @@ body {
   padding: 8px 10px;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 10px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-family: var(--font-family);
   color: var(--text-primary);
   outline: none;
@@ -1317,7 +1633,7 @@ body {
 .link-editor-btn {
   padding: 9px 14px;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   font-family: var(--font-family);
   cursor: pointer;
@@ -1397,7 +1713,7 @@ body {
   background: none;
   border: none;
   color: rgba(255, 255, 255, 0.5);
-  font-size: 14px;
+  font-size: 0.875rem;
   width: 32px;
   height: 100%;
   display: flex;
@@ -1430,7 +1746,7 @@ body {
 
 .cal-strip-month {
   color: rgba(255, 255, 255, 0.35);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   padding: 0 10px;
   flex-shrink: 0;
@@ -1458,14 +1774,14 @@ body {
 }
 
 .cal-strip-day .day-num {
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.7);
   line-height: 1;
 }
 
 .cal-strip-day .day-name {
-  font-size: 10px;
+  font-size: 0.625rem;
   color: rgba(255, 255, 255, 0.35);
   margin-top: 3px;
 }
@@ -1562,7 +1878,7 @@ body {
 }
 
 .dday-card-name {
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.85);
   white-space: nowrap;
@@ -1571,14 +1887,14 @@ body {
 }
 
 .dday-card-count {
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 700;
   color: #fbbf24;
   line-height: 1.2;
 }
 
 .dday-card-date {
-  font-size: 9px;
+  font-size: 0.5625rem;
   color: rgba(255, 255, 255, 0.4);
 }
 
@@ -1587,7 +1903,7 @@ body {
   border: none;
   color: rgba(255, 255, 255, 0.25);
   cursor: pointer;
-  font-size: 11px;
+  font-size: 0.6875rem;
   padding: 4px;
   transition: color 0.2s;
   flex-shrink: 0;
@@ -1619,7 +1935,7 @@ body {
   color: rgba(255, 255, 255, 0.7);
   padding: 6px 10px;
   border-radius: 7px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 600;
   font-family: var(--font-family);
   cursor: pointer;
@@ -1636,7 +1952,7 @@ body {
 }
 
 .day-tooltip-btn i {
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 
 @keyframes ddayPopIn {
@@ -1681,7 +1997,7 @@ body {
 }
 
 .dday-modal-header h3 {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -1690,7 +2006,7 @@ body {
   background: none;
   border: none;
   color: var(--text-muted);
-  font-size: 16px;
+  font-size: 1rem;
   cursor: pointer;
   padding: 4px;
   transition: color 0.2s;
@@ -1708,7 +2024,7 @@ body {
 }
 
 .dday-modal-body label {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--text-secondary);
 }
@@ -1718,7 +2034,7 @@ body {
   padding: 10px 14px;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-family: var(--font-family);
   color: var(--text-primary);
   outline: none;
@@ -1727,6 +2043,28 @@ body {
 
 .dday-modal-body input:focus {
   border-color: var(--accent);
+}
+
+.dday-modal-body textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-family: var(--font-family);
+  color: var(--text-primary);
+  outline: none;
+  resize: vertical;
+  min-height: 100px;
+  transition: border-color 0.2s ease;
+}
+
+.dday-modal-body textarea:focus {
+  border-color: var(--accent);
+}
+
+.feedback-modal.dday-modal {
+  width: min(440px, calc(100vw - 32px));
 }
 
 .dday-modal-footer {
@@ -1742,7 +2080,7 @@ body {
   color: var(--text-secondary);
   padding: 10px 20px;
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   font-family: var(--font-family);
   cursor: pointer;
@@ -1759,7 +2097,7 @@ body {
   color: #fff;
   padding: 10px 24px;
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   font-family: var(--font-family);
   cursor: pointer;
@@ -1788,7 +2126,7 @@ body {
   padding: 9px 12px;
   color: var(--text-primary);
   font-family: var(--font-family);
-  font-size: 13px;
+  font-size: 0.8125rem;
   outline: none;
   transition: border-color 0.2s ease;
 }
@@ -1808,7 +2146,7 @@ body {
   padding: 0 16px;
   border-radius: 10px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   font-family: var(--font-family);
   transition: all 0.2s ease;
@@ -1860,8 +2198,8 @@ body {
 /* 반응형                                          */
 /* ============================================= */
 @media (max-width: 1400px) {
-  .clock-time { font-size: 48px; }
-  .card-header h2 { font-size: 13px; }
+  .clock-time { font-size: 3rem; }
+  .card-header h2 { font-size: 0.8125rem; }
 }
 
 @media (max-width: 1100px) {
@@ -1871,5 +2209,67 @@ body {
   .center-cards {
     grid-template-columns: 1fr;
   }
-  .clock-time { font-size: 40px; }
+  .clock-time { font-size: 2.5rem; }
+}
+
+/* ============================================= */
+/* 메모 요약 (memo.view.js) · Electron           */
+/* ============================================= */
+.memo-preview-wrap {
+  margin-bottom: 8px;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  max-height: 4.5em;
+  overflow: hidden;
+  opacity: 0.9;
+}
+.memo-preview-text { word-break: break-word; }
+.memo-preview-empty {
+  opacity: 0.55;
+  font-size: 0.6875rem;
+}
+
+.electron-drag-region {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  -webkit-app-region: drag;
+  z-index: 10000;
+}
+body.electron-widget-mode .dashboard-wrapper {
+  padding-top: 0;
+}
+
+.electron-desktop-settings {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.electron-desktop-title {
+  margin: 0 0 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.electron-desktop-hint {
+  margin-bottom: 0.75rem;
+}
+.electron-desktop-settings kbd {
+  display: inline-block;
+  padding: 0.1em 0.35em;
+  font-size: 0.85em;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.15);
+}
+.electron-checkbox {
+  display: block;
+  margin: 0.45rem 0;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+.electron-checkbox input {
+  margin-right: 0.5rem;
+  vertical-align: middle;
 }

@@ -176,17 +176,20 @@ async function loadMemo() {
 
   if (rows === null) {
     loadMemoFromLocal();
+    document.dispatchEvent(new CustomEvent('dashboard:memo-updated'));
     return;
   }
 
   if (rows.length === 0) {
     loadMemoFromLocal();
     if (ta.value) scheduleSaveMemoToSheet();
+    document.dispatchEvent(new CustomEvent('dashboard:memo-updated'));
     return;
   }
 
   ta.value = rows.map(r => r.join('\t')).join('\n');
   saveMemoLocal();
+  document.dispatchEvent(new CustomEvent('dashboard:memo-updated'));
 }
 
 function loadMemoFromLocal() {
@@ -212,11 +215,25 @@ function saveMemo() {
 function initMemo() {
   let t;
   const ta = document.getElementById('memo-textarea');
+  const notifyMemoPreview = () => {
+    document.dispatchEvent(new CustomEvent('dashboard:memo-updated'));
+  };
   ta.addEventListener('input', () => {
-    clearTimeout(t); t = setTimeout(saveMemo, 500);
+    clearTimeout(t);
+    t = setTimeout(() => {
+      saveMemo();
+      notifyMemoPreview();
+    }, 500);
+    notifyMemoPreview();
   });
-  ta.addEventListener('blur', saveMemo);
+  ta.addEventListener('blur', () => {
+    saveMemo();
+    notifyMemoPreview();
+  });
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') saveMemo();
+    if (document.visibilityState === 'hidden') {
+      saveMemo();
+      notifyMemoPreview();
+    }
   });
 }

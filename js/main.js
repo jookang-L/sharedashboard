@@ -82,15 +82,42 @@ function updateDayMarkersOnStrip() {
    D-Day 카드뉴스 (달력 오른쪽)
    ================================================================= */
 
+const DDAY_SORT_KEY = 'dashboard_dday_sort';
+
+function getDDaySortMode() {
+  try {
+    const v = localStorage.getItem(DDAY_SORT_KEY);
+    if (['nearest', 'dateAsc', 'dateDesc', 'nameAsc'].includes(v)) return v;
+  } catch { /* ignore */ }
+  return 'nearest';
+}
+
+function sortDDaysForDisplay(list, mode, today) {
+  const arr = [...list];
+  if (mode === 'nearest') {
+    return arr.sort((a, b) => {
+      const da = Math.abs(daysBetween(today, new Date(a.date + 'T00:00:00')));
+      const db = Math.abs(daysBetween(today, new Date(b.date + 'T00:00:00')));
+      return da - db;
+    });
+  }
+  if (mode === 'dateAsc') {
+    return arr.sort((a, b) => a.date.localeCompare(b.date));
+  }
+  if (mode === 'dateDesc') {
+    return arr.sort((a, b) => b.date.localeCompare(a.date));
+  }
+  if (mode === 'nameAsc') {
+    return arr.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko'));
+  }
+  return arr;
+}
+
 function renderDDayCards() {
   const area = document.getElementById('dday-cards-area');
   const today = getNow();
 
-  const sorted = [...ddays].sort((a, b) => {
-    const da = Math.abs(daysBetween(today, new Date(a.date + 'T00:00:00')));
-    const db = Math.abs(daysBetween(today, new Date(b.date + 'T00:00:00')));
-    return da - db;
-  });
+  const sorted = sortDDaysForDisplay(ddays, getDDaySortMode(), today);
 
   if (sorted.length === 0) {
     area.innerHTML = '';

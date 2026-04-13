@@ -3,15 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=1920, height=1080">
-  <title>교사용 바탕화면 대시보드</title>
+  <title>Jook Board</title>
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Sans+KR:wght@300;400;500;600&family=Nanum+Gothic:wght@400;700&family=Nanum+Myeongjo:wght@400;700&family=Gothic+A1:wght@300;400;500;600;700&family=Do+Hyeon&family=Pretendard:wght@300;400;500;600;700&family=Noto+Serif+KR:wght@400;500;600;700&family=Gowun+Batang&family=Gowun+Dodum&family=Black+Han+Sans&family=Jua&family=Sunflower:wght@300;500;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 </head>
 <body>
+  <div class="electron-drag-region" id="electron-drag-region" hidden aria-hidden="true"></div>
   <div class="background-overlay"></div>
 
   <div class="dashboard-wrapper">
+    <header class="app-titlebar" id="app-titlebar">
+      <div class="app-titlebar-left">
+        <span class="app-titlebar-brand">Jook Board</span>
+      </div>
+      <div class="app-titlebar-right">
+        <button type="button" class="app-titlebar-btn" id="titlebar-widget-btn" title="위젯 모드 (테두리 없음·항상 위)">
+          <i class="fas fa-border-all"></i>
+          <span class="app-titlebar-btn-label">위젯</span>
+        </button>
+        <div class="app-titlebar-field">
+          <label class="visually-hidden" for="titlebar-window-size">화면 크기</label>
+          <select id="titlebar-window-size" class="app-titlebar-select" title="창 크기">
+            <option value="">화면 크기</option>
+            <option value="1280x720">1280 × 720</option>
+            <option value="1366x768">1366 × 768</option>
+            <option value="1600x900">1600 × 900</option>
+            <option value="1920x1080">1920 × 1080</option>
+            <option value="max">최대화</option>
+          </select>
+        </div>
+        <button type="button" class="app-titlebar-btn" id="titlebar-feedback-btn" title="건의하기">
+          <i class="fas fa-comment-dots"></i>
+          <span class="app-titlebar-btn-label">건의</span>
+        </button>
+        <button type="button" class="app-titlebar-btn app-titlebar-btn-danger" id="titlebar-close-btn" title="창 닫기">
+          <i class="fas fa-times"></i>
+          <span class="app-titlebar-btn-label">닫기</span>
+        </button>
+      </div>
+    </header>
     <!-- 상단 영역: 달력 스트립 + D-Day 카드 -->
     <div class="calendar-area">
       <div class="calendar-strip" id="calendar-strip">
@@ -113,6 +144,9 @@
               <h2>MEMO</h2>
             </div>
             <div class="card-body">
+              <div class="memo-preview-wrap" id="memo-preview-wrap">
+                <div class="memo-preview" id="memo-preview" aria-live="polite"></div>
+              </div>
               <textarea class="memo-textarea" id="memo-textarea" placeholder="메모를 입력하세요..."></textarea>
             </div>
           </div>
@@ -127,6 +161,18 @@
               </button>
               <div class="settings-panel" id="settings-panel">
               <h3 class="settings-title">대시보드 설정</h3>
+              <div class="settings-group settings-theme-group" id="settings-theme-group">
+                <label>추천 테마</label>
+                <p class="settings-subhint">맨 앞 <strong>기본</strong>은 흰 바탕 기본 테마입니다. 칩을 누르면 적용되고, 아래 색·폰트를 바꾸면 선택이 해제됩니다. <a href="https://colorhunt.co/" target="_blank" rel="noopener noreferrer">Color Hunt</a> 스타일 팔레트를 참고했습니다.</p>
+                <div class="settings-theme-chips" id="settings-theme-chips" role="group" aria-label="추천 테마"></div>
+                <div class="settings-custom-theme-row">
+                  <label class="settings-custom-theme-label" for="custom-theme-name">내 테마</label>
+                  <input type="text" id="custom-theme-name" class="settings-input-inline" maxlength="28" placeholder="이름 입력" autocomplete="off">
+                  <button type="button" class="settings-mini-btn" id="custom-theme-save">현재 설정으로 저장</button>
+                </div>
+                <p class="settings-subhint settings-custom-theme-hint">배경·카드·폰트·색을 맞춘 뒤 저장하면 여기에 추가됩니다.</p>
+                <div class="settings-theme-chips settings-theme-chips-custom" id="settings-theme-chips-custom" role="group" aria-label="저장한 테마"></div>
+              </div>
               <div class="settings-group">
                 <label>배경 색상</label>
                 <div class="settings-color-row">
@@ -148,20 +194,30 @@
               <div class="settings-group">
                 <label>폰트</label>
                 <select id="setting-font" class="settings-select">
-                  <option value="'Noto Sans KR', sans-serif">Noto Sans KR</option>
-                  <option value="'Pretendard', sans-serif">Pretendard</option>
-                  <option value="'IBM Plex Sans KR', sans-serif">IBM Plex Sans KR</option>
-                  <option value="'Nanum Gothic', sans-serif">나눔고딕</option>
-                  <option value="'Nanum Myeongjo', serif">나눔명조</option>
-                  <option value="'Gothic A1', sans-serif">Gothic A1</option>
-                  <option value="'Do Hyeon', sans-serif">도현</option>
-                  <option value="'Noto Serif KR', serif">Noto Serif KR</option>
-                  <option value="'Gowun Batang', serif">고운바탕</option>
-                  <option value="'Gowun Dodum', serif">고운돋움</option>
-                  <option value="'Black Han Sans', sans-serif">Black Han Sans</option>
-                  <option value="'Jua', sans-serif">주아</option>
-                  <option value="'Sunflower', sans-serif">Sunflower</option>
+                  <optgroup label="웹 폰트">
+                    <option value="'Noto Sans KR', sans-serif">노토 산스</option>
+                    <option value="'Pretendard', sans-serif">프리텐다드</option>
+                    <option value="'IBM Plex Sans KR', sans-serif">IBM 플렉스 산스 한글</option>
+                    <option value="'Nanum Gothic', sans-serif">나눔고딕</option>
+                    <option value="'Nanum Myeongjo', serif">나눔명조</option>
+                    <option value="'Gothic A1', sans-serif">고딕 에이원</option>
+                    <option value="'Do Hyeon', sans-serif">도현</option>
+                    <option value="'Noto Serif KR', serif">노토 세리프 한글</option>
+                    <option value="'Gowun Batang', serif">고운바탕</option>
+                    <option value="'Gowun Dodum', serif">고운돋움</option>
+                    <option value="'Black Han Sans', sans-serif">블랙 한 산스</option>
+                    <option value="'Jua', sans-serif">주아</option>
+                    <option value="'Sunflower', sans-serif">해바라기</option>
+                  </optgroup>
+                  <optgroup label="내 폰트" id="setting-font-local-group"></optgroup>
                 </select>
+              </div>
+              <div class="settings-group">
+                <label>폰트 크기</label>
+                <div class="settings-color-row">
+                  <input type="range" id="setting-font-size" min="12" max="24" value="16" class="settings-range">
+                  <span class="settings-range-label" id="setting-font-size-label">16px</span>
+                </div>
               </div>
               <div class="settings-group">
                 <label>폰트 색상</label>
@@ -210,6 +266,13 @@
                 <div class="settings-group">
                   <label for="api-input-neis-key">나이스(NEIS) API 키</label>
                   <input type="password" class="api-settings-input" id="api-input-neis-key" placeholder="급식·학교 검색용" autocomplete="off" spellcheck="false">
+                </div>
+                <div id="electron-desktop-settings" class="electron-desktop-settings" hidden>
+                  <h4 class="electron-desktop-title">데스크톱 (Electron)</h4>
+                  <p class="api-settings-hint electron-desktop-hint">위젯 모드에서는 상단 <strong>Jook Board</strong> 바 빈 곳을 드래그해 창을 옮길 수 있습니다. 마우스 투과는 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd>으로 전환합니다. 앱 종료: 타이틀바 <strong>닫기</strong>, <kbd>Ctrl</kbd>+<kbd>Q</kbd>, 작업 표시줄 우클릭, <kbd>Alt</kbd>+<kbd>F4</kbd>. 새로고침 <kbd>Ctrl</kbd>+<kbd>R</kbd>, 개발자 도구 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd>.</p>
+                  <label class="electron-checkbox"><input type="checkbox" id="electron-widget-mode"> 위젯 모드 (테두리 없음·투명·항상 위)</label>
+                  <label class="electron-checkbox"><input type="checkbox" id="electron-click-through"> 마우스 투과 (바탕화면 클릭이 통과)</label>
+                  <label class="electron-checkbox"><input type="checkbox" id="electron-auto-launch"> Windows 로그인 시 실행</label>
                 </div>
                 <div class="api-settings-actions">
                   <button type="button" class="api-settings-save" id="api-settings-save">저장 후 적용</button>
@@ -267,6 +330,30 @@
     </div>
   </div>
 
+  <!-- 건의하기 모달 -->
+  <div class="dday-modal-overlay feedback-modal-overlay" id="feedback-modal-overlay" style="display:none; z-index: 250;">
+    <div class="dday-modal feedback-modal" role="dialog" aria-labelledby="feedback-modal-title">
+      <div class="dday-modal-header">
+        <h3 id="feedback-modal-title">건의하기</h3>
+        <button type="button" class="dday-modal-close" id="feedback-modal-close" aria-label="닫기"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="dday-modal-body">
+        <label for="feedback-input-title">제목</label>
+        <input type="text" id="feedback-input-title" maxlength="120" placeholder="한 줄 요약" autocomplete="off">
+        <label for="feedback-input-feature">구현 기능</label>
+        <input type="text" id="feedback-input-feature" maxlength="200" placeholder="원하는 기능·화면 등" autocomplete="off">
+        <label for="feedback-input-body">내용</label>
+        <textarea id="feedback-input-body" rows="5" maxlength="4000" placeholder="상세 내용을 적어 주세요"></textarea>
+        <label for="feedback-input-email">이메일 (선택)</label>
+        <input type="email" id="feedback-input-email" maxlength="120" placeholder="회신이 필요하면 입력" autocomplete="email">
+      </div>
+      <div class="dday-modal-footer">
+        <button type="button" class="dday-modal-cancel" id="feedback-modal-cancel">취소</button>
+        <button type="button" class="dday-modal-submit" id="feedback-modal-submit">보내기</button>
+      </div>
+    </div>
+  </div>
+
   <!-- D-Day 추가 모달 -->
   <div class="dday-modal-overlay" id="dday-modal-overlay" style="display:none;">
     <div class="dday-modal">
@@ -289,6 +376,7 @@
 
   <!-- JS 로딩 순서: API → 컴포넌트 → 메인 -->
   <script src="js/google-api.js"></script>
+  <script src="js/local-fonts.js"></script>
   <script src="js/components/timetable.js"></script>
   <script src="js/components/meals.js"></script>
   <script src="js/components/todo.js"></script>
@@ -296,6 +384,10 @@
   <script src="js/components/settings.js"></script>
   <script src="js/components/api-settings.js"></script>
   <script src="js/components/cards-layout.js"></script>
+  <script src="js/components/memo.view.js"></script>
+  <script src="js/electron-bridge.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/app-titlebar.js"></script>
+  <script src="js/feedback.js"></script>
 </body>
 </html>
