@@ -3,6 +3,9 @@
    ================================================================= */
 
 const TT_OVERRIDE_KEY = 'dashboard_timetable_overrides';
+/** 온보딩·로컬 전용 시간표 (시트보다 우선 적용) */
+const TIMETABLE_LOCAL_ROWS_KEY = 'dashboard_timetable_local_rows';
+
 let timetableViewDayOverride = null;
 let sheetTimetableCache = null;
 let timetableLoaded = false;
@@ -100,21 +103,15 @@ function initTimetableDayTabs() {
   initTTContextMenu();
 }
 
-/* --- 시트에서 시간표 로드 (하루 한 번) --- */
+/* --- 시트 / 로컬 행 → 캐시 --- */
 
-async function loadTimetable() {
-  if (timetableLoaded && sheetTimetableCache) {
-    renderTimetableForDay();
-    return;
-  }
+function applyTimetableRowsFromSheet(rows) {
+  if (!rows || rows.length === 0) return false;
 
-  const rows = await fetchSheetData(CONFIG.SHEETS.TIMETABLE);
-  if (!rows || rows.length === 0) { renderTimetableFallback(); return; }
-
-  const headerRowIdx = rows.findIndex(r =>
-    r.some(cell => cell && (String(cell).includes('교시') || String(cell).includes('시간')))
+  const headerRowIdx = rows.findIndex((r) =>
+    r.some((cell) => cell && (String(cell).includes('교시') || String(cell).includes('시간')))
   );
-  if (headerRowIdx < 0) { renderTimetableFallback(); return; }
+  if (headerRowIdx < 0) return false;
 
   sheetTimetableCache = {};
   for (let i = headerRowIdx + 1; i < rows.length; i++) {
@@ -125,18 +122,58 @@ async function loadTimetable() {
     const periodNum = parseInt(periodLabel, 10) || (i - headerRowIdx);
 
     if (timeStr && timeStr.includes('~')) {
-      const [start, end] = timeStr.split('~').map(s => s.trim());
+      const [start, end] = timeStr.split('~').map((s) => s.trim());
       CONFIG.PERIOD_TIMES[periodNum - 1] = { start, end };
     }
 
     for (let d = 1; d <= 5; d++) {
       const colIndex = d + 1;
       const subject = (row[colIndex] || '').trim();
-      const key = overrideKey(d, periodNum);
       if (!sheetTimetableCache[d]) sheetTimetableCache[d] = [];
       sheetTimetableCache[d].push({ period: periodNum, subject, timeStr });
     }
   }
+
+  return true;
+}
+
+/** 온보딩 등에서 저장한 2차원 배열 (시트와 동일 형식) */
+function saveTimetableRowsToLocal(rows) {
+  try {
+    localStorage.setItem(TIMETABLE_LOCAL_ROWS_KEY, JSON.stringify(rows));
+  } catch { /* ignore */ }
+}
+
+function loadTimetableLocalRows() {
+  try {
+    const raw = localStorage.getItem(TIMETABLE_LOCAL_ROWS_KEY);
+    if (!raw) return null;
+    const rows = JSON.parse(raw);
+    return Array.isArray(rows) && rows.length ? rows : null;
+  } catch {
+    return null;
+  }
+}
+
+/* --- 시트에서 시간표 로드 (로컬 저장분 우선) --- */
+
+async function loadTimetable() {
+  if (timetableLoaded && sheetTimetableCache) {
+    renderTimetableForDay();
+    return;
+  }
+
+  const localRows = loadTimetableLocalRows();
+  if (localRows && applyTimetableRowsFromSheet(localRows)) {
+    timetableLoaded = true;
+    renderTimetableForDay();
+    return;
+  }
+
+  const rows = await fetchSheetData(CONFIG.SHEETS.TIMETABLE);
+  if (!rows || rows.length === 0) { renderTimetableFallback(); return; }
+
+  if (!applyTimetableRowsFromSheet(rows)) { renderTimetableFallback(); return; }
 
   timetableLoaded = true;
   renderTimetableForDay();

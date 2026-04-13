@@ -2,15 +2,51 @@
   "name": "share-dashboard",
   "version": "1.0.0",
   "description": "공유 대시보드 (Electron)",
+  "author": "Jook",
   "main": "electron/main.js",
   "private": true,
   "scripts": {
     "start": "electron .",
+    "start:onboarding": "electron . --open-onboarding",
     "electron": "electron .",
-    "build:fonts": "node scripts/build-local-fonts.js"
+    "build:fonts": "node scripts/build-local-fonts.js",
+    "dist": "electron-builder --win",
+    "dist:dir": "electron-builder --win --dir"
+  },
+  "build": {
+    "appId": "com.jook.share-dashboard",
+    "productName": "Jook Board",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.html",
+      "style.css",
+      "js/**/*",
+      "public/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   },
   "devDependencies": {
     "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
     "electron-reloader": "^1.2.3"
   }
 }

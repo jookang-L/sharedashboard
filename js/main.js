@@ -527,6 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSettings();
   initDockPanelCloseOutside();
   initApiSettings();
+  initOnboarding();
   initLinksEditor();
   initCardLayout();
   initDragAndDrop();

@@ -115,6 +115,71 @@ function applyStoredApiConfig() {
 
 applyStoredApiConfig();
 
+/** 연동 설정을 localStorage에 저장 (api-settings·온보딩 공용) */
+function saveApiConfigToStorage() {
+  const payload = {
+    googleApiKey: CONFIG.GOOGLE_API_KEY || '',
+    spreadsheetId: CONFIG.SPREADSHEET_ID || '',
+    appsScriptUrl: CONFIG.APPS_SCRIPT_URL || '',
+    neisApiKey: CONFIG.NEIS.API_KEY || '',
+  };
+  localStorage.setItem(API_CONFIG_STORAGE_KEY, JSON.stringify(payload));
+}
+
+const ONBOARDING_STORAGE_KEY = 'dashboard_onboarding_done';
+const USER_DISPLAY_NAME_KEY = 'dashboard_user_display_name';
+
+/** 기존 사용자: 연동 설정만 있고 온보딩 플래그가 없으면 마이그레이션 */
+function migrateOnboardingDoneFlag() {
+  try {
+    if (localStorage.getItem(ONBOARDING_STORAGE_KEY)) return;
+    if (localStorage.getItem(API_CONFIG_STORAGE_KEY)) {
+      localStorage.setItem(ONBOARDING_STORAGE_KEY, '1');
+    }
+  } catch { /* ignore */ }
+}
+
+function getUserDisplayName() {
+  try {
+    const s = localStorage.getItem(USER_DISPLAY_NAME_KEY);
+    return s && String(s).trim() ? String(s).trim() : '';
+  } catch {
+    return '';
+  }
+}
+
+function getTitlebarBrandText() {
+  const u = getUserDisplayName();
+  return u ? `${u} Board` : 'Jook Board';
+}
+
+function applyTitlebarBrand() {
+  const el = document.querySelector('.app-titlebar-brand');
+  if (el) el.textContent = getTitlebarBrandText();
+  document.title = getTitlebarBrandText();
+}
+
+function setUserDisplayName(name) {
+  const t = (name || '').trim();
+  if (t) localStorage.setItem(USER_DISPLAY_NAME_KEY, t);
+  else localStorage.removeItem(USER_DISPLAY_NAME_KEY);
+  applyTitlebarBrand();
+}
+
+function shouldShowOnboardingWizard() {
+  try {
+    return !localStorage.getItem(ONBOARDING_STORAGE_KEY);
+  } catch {
+    return false;
+  }
+}
+
+function markOnboardingFinished() {
+  try {
+    localStorage.setItem(ONBOARDING_STORAGE_KEY, '1');
+  } catch { /* ignore */ }
+}
+
 function getFeedbackWebhookUrl() {
   return normalizeAppsScriptUrl(FEEDBACK_WEBAPP_URL);
 }

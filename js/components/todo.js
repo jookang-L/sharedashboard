@@ -32,6 +32,47 @@ function postToAppsScript(payload) {
   }
 }
 
+/**
+ * 시간표 행을 시트 「시트1」에 반영 (POST JSON). 온보딩은 로컬 저장만 하며 이 함수를 쓰지 않습니다.
+ * Apps Script에 doPost 추가 예시:
+ *   function doPost(e) {
+ *     var body = JSON.parse(e.postData.contents);
+ *     if (body.action !== 'saveTimetable' || !body.rows) return jsonOut({ ok:false });
+ *     var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('시트1');
+ *     if (!sh) return jsonOut({ ok:false, error:'no_sheet' });
+ *     sh.clearContents();
+ *     sh.getRange(1, 1, body.rows.length, body.rows[0].length).setValues(body.rows);
+ *     return jsonOut({ ok:true });
+ *   }
+ *   function jsonOut(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
+ * 웹앱 배포: 실행 사용자=본인, 액세스=누구나, POST 허용.
+ */
+async function postTimetableRowsToAppsScript(rows) {
+  const url = CONFIG.APPS_SCRIPT_URL;
+  if (!url) return { ok: false, error: 'no_url' };
+  if (!rows || !rows.length) return { ok: false, error: 'no_rows' };
+  const payload = { action: 'saveTimetable', rows };
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      mode: 'cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+    });
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { ok: false, error: text.slice(0, 200) };
+    }
+    return data;
+  } catch (err) {
+    console.warn('[시간표 시트 POST]', err.message);
+    return { ok: false, error: err.message };
+  }
+}
+
 function scheduleSaveTodosToSheet() {
   clearTimeout(todoSaveTimer);
   todoSaveTimer = setTimeout(() => {

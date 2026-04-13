@@ -85,7 +85,9 @@ function createWindow(opts = {}) {
   });
 
   const htmlPath = path.join(__dirname, '..', 'index.html');
-  win.loadFile(htmlPath);
+  /* 터미널에서 온보딩만 검증할 때: npm run start:onboarding */
+  const openOnboarding = process.argv.includes('--open-onboarding');
+  win.loadFile(htmlPath, openOnboarding ? { hash: 'onboarding' } : {});
 
   win.once('ready-to-show', () => {
     win.show();

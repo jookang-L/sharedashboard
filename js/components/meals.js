@@ -274,3 +274,15 @@ function renderLunch(items) {
   document.getElementById('lunch-list').innerHTML =
     items.map(i => `<li class="lunch-item">${i}</li>`).join('');
 }
+
+/** 온보딩에서 학교 검색·선택용 (window 전역) */
+function dashboardSelectSchoolFromSearch(r) {
+  const info = { eduCode: r.eduCode, schoolCode: r.schoolCode, schoolName: r.schoolName };
+  saveSchool(info);
+  applySchool(info);
+  if (typeof loadLunch === 'function') loadLunch();
+}
+if (typeof window !== 'undefined') {
+  window.dashboardSearchSchool = searchSchool;
+  window.dashboardSelectSchoolFromSearch = dashboardSelectSchoolFromSearch;
+}
