@@ -1,6 +1,6 @@
 {
   "name": "share-dashboard",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "공유 대시보드 (Electron)",
   "author": "Jook",
   "main": "electron/main.js",
@@ -16,6 +16,7 @@
   "build": {
     "appId": "com.jook.share-dashboard",
     "productName": "Jook Board",
+    "icon": "public/icon.png",
     "directories": {
       "output": "dist"
     },

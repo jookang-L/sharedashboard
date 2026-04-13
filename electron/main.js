@@ -53,6 +53,15 @@ function writeStateSync(partial) {
   fs.writeFileSync(statePath(), JSON.stringify(next, null, 2), 'utf8');
 }
 
+/** 창·작업 표시줄 아이콘 (빌드 아이콘은 package.json build.icon) */
+function getWindowIconPath() {
+  const p = path.join(__dirname, '..', 'public', 'icon.png');
+  try {
+    if (fs.existsSync(p)) return p;
+  } catch { /* ignore */ }
+  return undefined;
+}
+
 function createWindow(opts = {}) {
   const state = readStateSync();
   const widget = opts.widgetMode !== undefined ? opts.widgetMode : !!state.widgetMode;
@@ -62,8 +71,11 @@ function createWindow(opts = {}) {
   const x = typeof b.x === 'number' ? b.x : undefined;
   const y = typeof b.y === 'number' ? b.y : undefined;
 
+  const iconPath = getWindowIconPath();
+
   const win = new BrowserWindow({
     ...(x !== undefined && y !== undefined ? { x, y } : {}),
+    ...(iconPath ? { icon: iconPath } : {}),
     width,
     height,
     minWidth: 400,
