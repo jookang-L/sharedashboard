@@ -260,7 +260,27 @@ function shouldForceOpenOnboardingWizard() {
   return false;
 }
 
-function initOnboarding() {
+/** Electron 앱 버전이 바뀌면(설치 업그레이드) 온보딩을 다시 띄우기 위해 완료 플래그 제거 */
+async function resetOnboardingIfAppVersionChanged() {
+  try {
+    const api = typeof window !== 'undefined' ? window.electronAPI : null;
+    if (!api || typeof api.getAppVersion !== 'function') return;
+    const ver = await api.getAppVersion();
+    if (!ver) return;
+    const key = 'dashboard_seen_app_version';
+    const prev = localStorage.getItem(key);
+    if (prev && prev !== ver) {
+      localStorage.removeItem('dashboard_onboarding_done');
+      try {
+        localStorage.setItem('dashboard_onboarding_skip_migrate_once', '1');
+      } catch { /* ignore */ }
+    }
+    localStorage.setItem(key, ver);
+  } catch { /* ignore */ }
+}
+
+async function initOnboarding() {
+  await resetOnboardingIfAppVersionChanged();
   migrateOnboardingDoneFlag();
   applyTitlebarBrand();
   const force = shouldForceOpenOnboardingWizard();

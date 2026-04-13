@@ -5,7 +5,7 @@
  *   (이 저장소는 fetch 기반 시트 연동이므로 별도 OAuth 플로우는 앱 연동 시 추가)
  */
 const electron = require('electron');
-const { app, BrowserWindow, ipcMain, shell, Menu, globalShortcut } = electron;
+const { app, BrowserWindow, ipcMain, shell, Menu, globalShortcut, Tray } = electron;
 
 /* 개발 모드: HTML/CSS/JS 저장 시 자동 새로고침 (main·preload 수정 시에는 앱 재시작 필요) */
 if (!app.isPackaged) {
@@ -23,6 +23,7 @@ const STATE_FILE = 'window-state.json';
 const DATA_DIR = 'dashboard-data';
 
 let mainWindow = null;
+let tray = null;
 
 function statePath() {
   return path.join(app.getPath('userData'), STATE_FILE);
@@ -125,6 +126,38 @@ function createWindow(opts = {}) {
 
   mainWindow = win;
   return win;
+}
+
+/** 알림 영역(시계 옆 · 숨겨진 아이콘 ^ 안) 트레이 아이콘 */
+function createTray() {
+  if (tray) return;
+  const iconPath = getWindowIconPath();
+  if (!iconPath) return;
+  try {
+    tray = new Tray(iconPath);
+  } catch (e) {
+    console.warn('[Tray]', e.message);
+    return;
+  }
+  const product = 'Jook Board';
+  tray.setToolTip(product);
+  const showMain = () => {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      createWindow();
+      return;
+    }
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  };
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      { label: '열기', click: showMain },
+      { type: 'separator' },
+      { label: '종료', click: () => app.quit() },
+    ])
+  );
+  tray.on('click', showMain);
 }
 
 function recreateWithWidgetMode(enabled) {
@@ -254,6 +287,8 @@ ipcMain.handle('app:setAutoLaunch', async (_e, enabled) => {
   return { ok: true };
 });
 
+ipcMain.handle('app:getVersion', async () => app.getVersion());
+
 ipcMain.handle('fs:readJson', async (_e, name) => {
   const safe = String(name || '').replace(/[^a-zA-Z0-9._-]/g, '') || 'data';
   const p = path.join(dataDir(), `${safe}.json`);
@@ -277,12 +312,20 @@ ipcMain.handle('fs:writeJson', async (_e, name, data) => {
 app.whenReady().then(() => {
   applyAutoLaunchFromState();
   createWindow();
+  createTray();
   buildMenu();
   registerShortcuts();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+});
+
+app.on('before-quit', () => {
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
 });
 
 app.on('window-all-closed', () => {

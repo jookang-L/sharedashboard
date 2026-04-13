@@ -127,12 +127,18 @@ function saveApiConfigToStorage() {
 }
 
 const ONBOARDING_STORAGE_KEY = 'dashboard_onboarding_done';
+/** 앱 버전 업 후 migrate가 온보딩 완료를 다시 채우지 않도록 1회 건너뜀 */
+const ONBOARDING_SKIP_MIGRATE_ONCE_KEY = 'dashboard_onboarding_skip_migrate_once';
 const USER_DISPLAY_NAME_KEY = 'dashboard_user_display_name';
 
 /** 기존 사용자: 연동 설정만 있고 온보딩 플래그가 없으면 마이그레이션 */
 function migrateOnboardingDoneFlag() {
   try {
     if (localStorage.getItem(ONBOARDING_STORAGE_KEY)) return;
+    if (localStorage.getItem(ONBOARDING_SKIP_MIGRATE_ONCE_KEY)) {
+      localStorage.removeItem(ONBOARDING_SKIP_MIGRATE_ONCE_KEY);
+      return;
+    }
     if (localStorage.getItem(API_CONFIG_STORAGE_KEY)) {
       localStorage.setItem(ONBOARDING_STORAGE_KEY, '1');
     }

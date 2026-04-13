@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 const IPC = {
+  getVersion: 'app:getVersion',
   openExternal: 'shell:openExternal',
   getWindowState: 'window:getState',
   setWidgetMode: 'window:setWidgetMode',
@@ -15,6 +16,7 @@ const IPC = {
 };
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  getAppVersion: () => ipcRenderer.invoke(IPC.getVersion),
   openExternal: (url) => ipcRenderer.invoke(IPC.openExternal, url),
   getWindowState: () => ipcRenderer.invoke(IPC.getWindowState),
   setWidgetMode: (enabled) => ipcRenderer.invoke(IPC.setWidgetMode, enabled),
